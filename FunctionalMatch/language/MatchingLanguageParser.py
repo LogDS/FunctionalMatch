@@ -223,6 +223,7 @@ class MatchingLanguageParser ( Parser ):
             super().__init__(parent, invokingState)
             self.parser = parser
             self.query = None # ObjectContext
+            self.rewriting = None # ObjectContext
 
         def MATCHING(self):
             return self.getToken(MatchingLanguageParser.MATCHING, 0)
@@ -364,7 +365,7 @@ class MatchingLanguageParser ( Parser ):
             la_ = self._interp.adaptivePredict(self._input,6,self._ctx)
             if la_ == 1:
                 self.state = 51
-                self.object_()
+                localctx.rewriting = self.object_()
                 pass
 
             elif la_ == 2:

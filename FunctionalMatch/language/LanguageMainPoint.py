@@ -4,6 +4,7 @@ import dacite
 from antlr4 import *
 import os
 
+from FunctionalMatch.Query import Query
 from FunctionalMatch.language.MatchingLanguageLexer import MatchingLanguageLexer
 from FunctionalMatch.language.MatchingLanguageParser import MatchingLanguageParser
 from FunctionalMatch.language.MatchingLanguageVisitor import MatchingLanguageVisitor
@@ -56,8 +57,15 @@ class MatchingLanguageVisitor2(MatchingLanguageVisitor):
             where = self.visit(ctx.prop())
         ## TODO: perform the rest, according to the full query semantics!
         from FunctionalMatch.Match import Match
-        return Match(q, nested, where, extension)
-
+        query =  Match(q, nested, where, extension)
+        as_ = None
+        if ctx.rewriting is not None:
+            as_ = self.visit(ctx.rewriting)
+        elif ctx.variable() is not None:
+            as_ = self.visit(ctx.variable())
+        elif ctx.jpath() is not None:
+            as_ = self.visit(ctx.jpath())
+        return Query(query, as_)
     
     # Visit a parse tree produced by MatchingLanguageParser#p_not.
     def visitP_not(self, ctx: MatchingLanguageParser.P_notContext):

@@ -6,7 +6,7 @@ rule: NESTED? MATCHING query=object
        (EXTEND (extension ',')+ extension )?
        (WHERE prop)?
        (replacement)*
-       AS (object|variable|jpath)
+       AS (rewriting=object|variable|jpath)
       ;
 
 prop: LPAR prop RPAR #p_par
