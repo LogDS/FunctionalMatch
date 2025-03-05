@@ -53,13 +53,14 @@ def var_update(value, obj, kwargs:FrozenDict):
         val = obj.expression.find(':')
         pathing_var = None
         if val == -1:
-            if obj.expression.startswith('$'):
-                pathing_var = "$"
-                pathing_over_expr = obj.expression
-                pathing_object = kwargs.get("$", None)
-            else:
-                pathing_var = obj.expression
-                return kwargs.get(obj.expression, None)
+            raise RuntimeError("ERROR: the var update has tp be set in the following way: <var>:json_expression")
+            # if obj.expression.startswith('$'):
+            #     pathing_var = "$"
+            #     pathing_over_expr = obj.expression
+            #     pathing_object = kwargs.get("$", None)
+            # else:
+            #     pathing_var = obj.expression
+            #     return kwargs.get(obj.expression, None)
         else:
             pathing_var = obj.expression[:val]
             pathing_over_expr = obj.expression[val+1:]

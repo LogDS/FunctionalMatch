@@ -5,19 +5,19 @@ from antlr4 import *
 import os
 
 from FunctionalMatch.Query import Query
+from FunctionalMatch.ReturningFirstObjects import FromJSONPath
+from FunctionalMatch.TransformationResults import ReplaceWith
 from FunctionalMatch.language.MatchingLanguageLexer import MatchingLanguageLexer
 from FunctionalMatch.language.MatchingLanguageParser import MatchingLanguageParser
 from FunctionalMatch.language.MatchingLanguageVisitor import MatchingLanguageVisitor
+from FunctionalMatch.utils import FrozenDict
+
 
 class MatchingLanguageVisitor2(MatchingLanguageVisitor):
-
-
-
-    
     def visitP_json(self, ctx: MatchingLanguageParser.P_jsonContext):
         if (ctx is None):
             raise RuntimeError("ERROR MATCHING JObject")
-        return json.loads(ctx.STRING().getText())
+        return json.loads(json.loads(ctx.STRING().getText()))
 
     def visitP_jpath(self, ctx: MatchingLanguageParser.P_jpathContext):
         if (ctx is None):
@@ -41,30 +41,42 @@ class MatchingLanguageVisitor2(MatchingLanguageVisitor):
                 if result is not None:
                     yield result
 
-    
+    def visitMatch_multiobj(self, ctx: MatchingLanguageParser.Match_multiobjContext):
+        if ctx is None:
+            return []
+        return [self.visit(x) for x in ctx.object_()]
+
     # Visit a parse tree produced by MatchingLanguageParser#match.
     def visitRule(self, ctx: MatchingLanguageParser.RuleContext):
         if ctx is None:
             return None
         nested = ctx.NESTED() is not None
-        q = [self.visit(x) for x in ctx.object_()]
+        q = self.visit(ctx.query)
         extension = []
         if ctx.EXTEND() is not None:
             for child in ctx.extension():
                 extension.append(self.visit(child))
+        replacements = dict()
+        if ctx.REPLACE() is not None:
+            for child in ctx.replacement():
+                k, v = self.visit(child)
+                replacements[k] = v
+        replacements = ReplaceWith(FrozenDict.from_dictionary(replacements))
         where = None
         if ctx.WHERE() is not None:
             where = self.visit(ctx.prop())
         ## TODO: perform the rest, according to the full query semantics!
         from FunctionalMatch.Match import Match
-        query =  Match(q, nested, where, extension)
+        query =  Match(q, nested, where, extension, replacements)
         as_ = None
         if ctx.rewriting is not None:
-            as_ = self.visit(ctx.rewriting)
+            from FunctionalMatch.ReturningFirstObjects import Invent
+            as_ = Invent(self.visit(ctx.rewriting))
         elif ctx.variable() is not None:
-            as_ = self.visit(ctx.variable())
+            from FunctionalMatch.ReturningFirstObjects import FromVariable
+            as_ = FromVariable(self.visit(ctx.variable()))
         elif ctx.jpath() is not None:
-            as_ = self.visit(ctx.jpath())
+            as_ = FromJSONPath(self.visit(ctx.jpath()))
         return Query(query, as_)
     
     # Visit a parse tree produced by MatchingLanguageParser#p_not.
@@ -165,7 +177,7 @@ class MatchingLanguageVisitor2(MatchingLanguageVisitor):
         if (ctx is None):
             raise RuntimeError("ERROR MATCHING extension")
         from FunctionalMatch.Match import ExternalMatchByExtesion
-        return ExternalMatchByExtesion(json.loads(ctx.fun.getText()), json.loads(ctx.module.getText()))
+        return ExternalMatchByExtesion(json.loads(ctx.fun.text), json.loads(ctx.module.text))
 
     
     # Visit a parse tree produced by MatchingLanguageParser#actual_object.
@@ -232,8 +244,11 @@ class MatchingLanguageVisitor2(MatchingLanguageVisitor):
     def visitReplacement(self, ctx: MatchingLanguageParser.ReplacementContext):
         if (ctx is None):
             raise RuntimeError("ERROR MATCHING replacement")
-        premise = self.visit(ctx.repl)
+        premise = ctx.variable().ALPHANAME().getText()
         conseq = self.visit(ctx.as_)
+        from FunctionalMatch.functions.structural_match import Variable
+        if isinstance(conseq, Variable) or type(conseq).__name__ == "Variable":
+            conseq = conseq.name
         return (premise, conseq)
 
 

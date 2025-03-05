@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Optional
 
+def example_ext(d):
+    return d.update("genoveffo", "blue")
 
 @dataclass
 class Node:

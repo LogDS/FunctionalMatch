@@ -1,5 +1,7 @@
 from dataclasses import dataclass
+from typing import Union
 
+from FunctionalMatch import JSONPath
 from FunctionalMatch.utils import FrozenDict
 
 @dataclass(frozen=True, eq=True, order=True)
@@ -39,12 +41,12 @@ class FromJSONPath:
     """
     Returns one of the objects defined within the variable
     """
-    path: str
+    path: Union[str,JSONPath]
 
     def __call__(self, kwargs: FrozenDict):
         from FunctionalMatch import JSONPath
         assert self.path in kwargs
         from FunctionalMatch.PropositionalLogic import var_interpret
-        result = var_interpret(JSONPath(self.path), kwargs)
+        result = var_interpret(JSONPath(self.path) if isinstance(self.path, str) else self.path, kwargs)
         return MatchedObjects(result, kwargs.update("^", result))
 

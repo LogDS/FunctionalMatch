@@ -2,12 +2,14 @@ grammar MatchingLanguage;
 // java -jar /home/giacomo/Scaricati/antlr-4.13.2-complete.jar -visitor  -Dlanguage=Python3 MatchingLanguage.g4
 language: (rule ';')+;
 
-rule: NESTED? MATCHING query=object
-       (EXTEND (extension ',')+ extension )?
+rule: NESTED? MATCHING query=match_multiobj
+       (EXTEND (extension ',')* extension )?
+       (REPLACE (replacement ',')* replacement)?
        (WHERE prop)?
-       (replacement)*
-       AS (rewriting=object|variable|jpath)
+       AS (rewriting=object|variable|jpath|rewrite_list)
       ;
+
+match_multiobj: (object ',')* object;
 
 prop: LPAR prop RPAR #p_par
     | prop AND prop  #p_and
@@ -35,8 +37,13 @@ object: ALPHANAME LPAR ((object ',')+ object)? RPAR  OVERMODULE module=STRING   
       ;
 jpath : JSONPATH STRING;
 variable: 'var' LPAR ALPHANAME RPAR ;
-replacement: REPLACE repl=variable|jpath WITH as=object|variable|jpath;
+rewrite_list: (SHALLOW|DEEP) REWRITE (rewrite ',')* rewrite;
 
+replacement: variable           WITH as=object|variable|jpath;
+rewrite:     repl=variable|jpath   AS as=object|variable|jpath;
+
+SHALLOW: 'shallow';
+DEEP: 'deep';
 AS: 'as';
 VAR: 'var';
 MATCHING: 'match';
@@ -44,6 +51,7 @@ NESTED: 'nested';
 WHERE: 'where';
 EXTEND: 'extend-with';
 REPLACE: 'replace';
+REWRITE: 'rewrite';
 WITH: 'with';
 OVERMODULE: 'in-module';
 AND: '&&';

@@ -11,10 +11,14 @@ class Query:
     select: Match
     as_: Union[Invent, FromVariable, FromJSONPath]
 
+    def __call__(self, obj):
+        test, outcome_list = self.select(obj)
+        if not test:
+            return test, []  # Rationale: no outcome is available, if the test is false
+        results = []
+        for dct in outcome_list:
+            result = self.as_(dct)
+            if result is not None:
+                results.append(result.obj)
+        return True, results
 
-def query_interpreter(query: Query, obj:object):
-    test, outcome_list = query.select(obj)
-    if not test:
-        return test, outcome_list
-    for dct in outcome_list:
-        dct = query.as_(dct)

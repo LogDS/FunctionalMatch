@@ -13,8 +13,14 @@ class FrozenDict(collections.abc.Mapping):
     def from_dictionary(d):
         return FrozenDict(**d)
 
+    def __contains__(self, key):
+        return key in self._d
+
     def __iter__(self):
         return iter(self._d)
+
+    def items(self):
+        return self._d.items()
 
     def __len__(self):
         return len(self._d)

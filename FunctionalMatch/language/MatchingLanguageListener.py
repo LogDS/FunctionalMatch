@@ -1,4 +1,4 @@
-# Generated from MatchingLanguage.g4 by ANTLR 4.13.1
+# Generated from MatchingLanguage.g4 by ANTLR 4.13.2
 from antlr4 import *
 if "." in __name__:
     from .MatchingLanguageParser import MatchingLanguageParser
@@ -23,6 +23,15 @@ class MatchingLanguageListener(ParseTreeListener):
 
     # Exit a parse tree produced by MatchingLanguageParser#rule.
     def exitRule(self, ctx:MatchingLanguageParser.RuleContext):
+        pass
+
+
+    # Enter a parse tree produced by MatchingLanguageParser#match_multiobj.
+    def enterMatch_multiobj(self, ctx:MatchingLanguageParser.Match_multiobjContext):
+        pass
+
+    # Exit a parse tree produced by MatchingLanguageParser#match_multiobj.
+    def exitMatch_multiobj(self, ctx:MatchingLanguageParser.Match_multiobjContext):
         pass
 
 
@@ -224,12 +233,30 @@ class MatchingLanguageListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by MatchingLanguageParser#rewrite_list.
+    def enterRewrite_list(self, ctx:MatchingLanguageParser.Rewrite_listContext):
+        pass
+
+    # Exit a parse tree produced by MatchingLanguageParser#rewrite_list.
+    def exitRewrite_list(self, ctx:MatchingLanguageParser.Rewrite_listContext):
+        pass
+
+
     # Enter a parse tree produced by MatchingLanguageParser#replacement.
     def enterReplacement(self, ctx:MatchingLanguageParser.ReplacementContext):
         pass
 
     # Exit a parse tree produced by MatchingLanguageParser#replacement.
     def exitReplacement(self, ctx:MatchingLanguageParser.ReplacementContext):
+        pass
+
+
+    # Enter a parse tree produced by MatchingLanguageParser#rewrite.
+    def enterRewrite(self, ctx:MatchingLanguageParser.RewriteContext):
+        pass
+
+    # Exit a parse tree produced by MatchingLanguageParser#rewrite.
+    def exitRewrite(self, ctx:MatchingLanguageParser.RewriteContext):
         pass
 
 

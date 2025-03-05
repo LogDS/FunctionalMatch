@@ -1,4 +1,5 @@
 from dataclasses import dataclass, is_dataclass, fields
+from typing import Union
 
 from dacite import from_dict
 
@@ -8,36 +9,48 @@ from FunctionalMatch.functions.Reference import Reference
 from FunctionalMatch.functions.structural_match import Variable
 from FunctionalMatch.utils import FrozenDict
 
-def replace_with(obj, d: dict):
-    ref = Reference.from_object(obj)
-    if ref in d:
-        obj = d[ref]
-    elif obj in d:
-        obj = d[obj]
-    elif is_dataclass(obj):
-        obj_inst = dict()
-        for field in fields(obj):
-            obj_inst[field.name] = replace_with(getattr(obj, field.name), d)
-        return from_dict(type(obj), obj_inst)
-    if isinstance(obj, Reference):
-        return obj.get()
-    else:
-        return obj
+# def replace_with(obj, d: dict):
+#     ref = Reference.from_object(obj)
+#     if ref in d:
+#         obj = d[ref]
+#     elif obj in d:
+#         obj = d[obj]
+#     elif is_dataclass(obj):
+#         obj_inst = dict()
+#         for field in fields(obj):
+#             obj_inst[field.name] = replace_with(getattr(obj, field.name), d)
+#         return from_dict(type(obj), obj_inst)
+#     if isinstance(obj, Reference):
+#         return obj.get()
+#     else:
+#         return obj
+
+def replace_with_v2(d:Union[dict,FrozenDict], original:dict):
+    assert isinstance(original, FrozenDict) or isinstance(original, dict)
+    if isinstance(original, dict):
+        original = FrozenDict.from_dictionary(original)
+    if len(original) == 0:
+        return original
+    for k, v in d.items():
+        assert isinstance(k, str)
+        if isinstance(v, JSONPath):
+            from FunctionalMatch.PropositionalLogic import var_interpret
+            original = original.update(k, var_interpret(v, original))
+        elif isinstance(v, str):
+            if v in original:
+                original = original.update(k, original.get(v))
+        else:
+            from FunctionalMatch import instantiate
+            original = original.update(k, instantiate(v, original))
+    return original
 
 
 @dataclass(frozen=True, order=True, eq=True)
 class ReplaceWith:
     replacement: FrozenDict
 
-    def __call__(self, obj: MatchedObjects) -> MatchedObjects:
-        replaced_dict = dict()
-        for k, v in self.replacement.items():
-            if isinstance(k, Variable) and k in obj.variables:
-                k = Reference.from_object(obj.variables[k.name])
-            if isinstance(v, Variable) and v in obj.variables:
-                v = Reference.from_object(obj.variables[k.name])
-            replaced_dict[k] = v
-        return MatchedObjects(replace_with(obj.obj, replaced_dict), obj.variables)
+    def __call__(self, obj: FrozenDict) -> FrozenDict:
+        return replace_with_v2(self.replacement, obj)
 
 
 @dataclass(frozen=True, order=True, eq=True)

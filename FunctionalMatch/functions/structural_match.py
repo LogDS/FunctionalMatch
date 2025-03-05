@@ -1,5 +1,8 @@
 from dataclasses import dataclass, is_dataclass, fields
 from types import MappingProxyType
+from typing import Union
+
+from FunctionalMatch.functions.Reference import Reference
 
 
 @dataclass(frozen=True, eq=True, order=True)
@@ -56,7 +59,7 @@ def _structural_match(query:object, target:object, match_result):
 
 def equi_join_dictionaries(ls):
     if len(ls) <= 1:
-        return ls
+        return ls[0]
     else:
         left = ls[0]
         right = ls[1]
@@ -70,28 +73,50 @@ def equi_join_dictionaries(ls):
         ls.insert(0, tmp)
         return equi_join_dictionaries(ls)
 
-
-def structural_match(query:object, target:object, doNested=False, condition=None, extension_match_function_list=None):
+def structural_match_single_query(doNested, query, target, number=0):
     outcome = []
     result = _structural_match(query, target, dict())
+    current = "${number}"
     if result is not None:
-        result["$"] = target
+        result[current] = target
         outcome.append(result)
-    if doNested:
+    if doNested and (result is not None):
         for k, x in result.items():
-            if k != "$":
+            if k != current:
                 do_extend, dd = structural_match(query, x, True)
                 if do_extend:
                     outcome += dd
+    return outcome
+
+def structural_match(queries:Union[list,object],
+                     target:object,
+                     doNested=False,
+                     condition=None,
+                     extension_match_function_list=None,
+                     replacement=None):
+    if isinstance(queries, list):
+        outcome = [structural_match_single_query(doNested, query, target) for query in queries]
+        outcome = equi_join_dictionaries(outcome)
+    else:
+        outcome = structural_match_single_query(doNested, queries, target)
     if (extension_match_function_list is not None) and (isinstance(extension_match_function_list, list) or isinstance(extension_match_function_list, tuple)) and all(map(callable, extension_match_function_list)) and len(extension_match_function_list)>0:
         tmp = []
         for x in outcome:
-            extension = [extension_match_function(x) for extension_match_function in extension_match_function_list]
-            extension.insert(0, x)
-            tmp.extend(equi_join_dictionaries(extension))
+            for extension_match_function in extension_match_function_list:
+                x = extension_match_function(x)
+            tmp.append(x)
         outcome = tmp
     if condition is not None:
         from FunctionalMatch.functions.Where import where
-        return where(outcome, condition)
-    else:
-        return len(outcome)>0, outcome
+        outcome = where(outcome, condition)
+    test = len(outcome)>0
+    if test:
+            if replacement is None:
+                return test, outcome
+            else:
+                outcome = replacement(outcome)
+                test = len(outcome) > 0
+    return test, outcome
+
+
+

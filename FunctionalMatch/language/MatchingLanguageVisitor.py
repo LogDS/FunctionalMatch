@@ -1,4 +1,4 @@
-# Generated from MatchingLanguage.g4 by ANTLR 4.13.1
+# Generated from MatchingLanguage.g4 by ANTLR 4.13.2
 from antlr4 import *
 if "." in __name__:
     from .MatchingLanguageParser import MatchingLanguageParser
@@ -16,6 +16,11 @@ class MatchingLanguageVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by MatchingLanguageParser#rule.
     def visitRule(self, ctx:MatchingLanguageParser.RuleContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by MatchingLanguageParser#match_multiobj.
+    def visitMatch_multiobj(self, ctx:MatchingLanguageParser.Match_multiobjContext):
         return self.visitChildren(ctx)
 
 
@@ -129,8 +134,18 @@ class MatchingLanguageVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by MatchingLanguageParser#rewrite_list.
+    def visitRewrite_list(self, ctx:MatchingLanguageParser.Rewrite_listContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by MatchingLanguageParser#replacement.
     def visitReplacement(self, ctx:MatchingLanguageParser.ReplacementContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by MatchingLanguageParser#rewrite.
+    def visitRewrite(self, ctx:MatchingLanguageParser.RewriteContext):
         return self.visitChildren(ctx)
 
 

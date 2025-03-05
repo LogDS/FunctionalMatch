@@ -9,7 +9,13 @@ __status__ = "Production"
 
 
 from dataclasses import is_dataclass, fields, dataclass
+from typing import Union
+
 from dacite import from_dict
+
+from FunctionalMatch.utils import FrozenDict
+
+
 # from FunctionalMatch.utils import FrozenDict
 
 def replaceWith(query:object, replacement_map, value_map):
@@ -22,9 +28,11 @@ def replaceWith(query:object, replacement_map, value_map):
     #             for x in result:
 
 
-def instantiate(query:object, kwargs):
+def instantiate(query:object, kwargs:Union[dict,FrozenDict]):
     if type(query).__name__ == "Variable":
         return kwargs.get(query.name, None)
+    if type(query).__name__ == "Ignore":
+        return None
     elif is_dataclass(query):
         obj_inst = dict()
         for field in fields(query):
