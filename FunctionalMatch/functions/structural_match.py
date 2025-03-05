@@ -73,50 +73,6 @@ def equi_join_dictionaries(ls):
         ls.insert(0, tmp)
         return equi_join_dictionaries(ls)
 
-def structural_match_single_query(doNested, query, target, number=0):
-    outcome = []
-    result = _structural_match(query, target, dict())
-    current = "${number}"
-    if result is not None:
-        result[current] = target
-        outcome.append(result)
-    if doNested and (result is not None):
-        for k, x in result.items():
-            if k != current:
-                do_extend, dd = structural_match(query, x, True)
-                if do_extend:
-                    outcome += dd
-    return outcome
-
-def structural_match(queries:Union[list,object],
-                     target:object,
-                     doNested=False,
-                     condition=None,
-                     extension_match_function_list=None,
-                     replacement=None):
-    if isinstance(queries, list):
-        outcome = [structural_match_single_query(doNested, query, target) for query in queries]
-        outcome = equi_join_dictionaries(outcome)
-    else:
-        outcome = structural_match_single_query(doNested, queries, target)
-    if (extension_match_function_list is not None) and (isinstance(extension_match_function_list, list) or isinstance(extension_match_function_list, tuple)) and all(map(callable, extension_match_function_list)) and len(extension_match_function_list)>0:
-        tmp = []
-        for x in outcome:
-            for extension_match_function in extension_match_function_list:
-                x = extension_match_function(x)
-            tmp.append(x)
-        outcome = tmp
-    if condition is not None:
-        from FunctionalMatch.functions.Where import where
-        outcome = where(outcome, condition)
-    test = len(outcome)>0
-    if test:
-            if replacement is None:
-                return test, outcome
-            else:
-                outcome = replacement(outcome)
-                test = len(outcome) > 0
-    return test, outcome
 
 
 

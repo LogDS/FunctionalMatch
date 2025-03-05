@@ -24,11 +24,12 @@ def var_interpret(obj, kwargs:dict|FrozenDict, keepList=False):
     elif isinstance(obj, JSONPath):
         val = obj.expression.find(':')
         if val == -1:
-            if obj.expression.startswith('$'):
-                pathing_over_expr = obj.expression
-                pathing_object = kwargs.get("$", None)
-            else:
-                return kwargs.get(obj.expression, None)
+            raise RuntimeError("ERROR: the var update has tp be set in the following way: <var>:json_expression")
+            # if obj.expression.startswith('$'):
+            #     pathing_over_expr = obj.expression
+            #     pathing_object = kwargs.get("$", None)
+            # else:
+            #     return kwargs.get(obj.expression, None)
         else:
             pathing_over_expr = obj.expression[val+1:]
             pathing_object = kwargs.get(obj.expression[:val], None)
@@ -86,7 +87,11 @@ class Eq:
 
     def interpretation(self, kwargs):
         left = var_interpret(self.left, kwargs)
+        if left is None:
+            return True
         right = var_interpret(self.right, kwargs)
+        if right is None:
+            return True
         return left == right
 
 @dataclass(frozen=True, eq=True, order=True)
@@ -96,7 +101,11 @@ class NEq:
 
     def interpretation(self, kwargs):
         left = var_interpret(self.left, kwargs)
+        if left is None:
+            return True
         right = var_interpret(self.right, kwargs)
+        if right is None:
+            return True
         return left == right
 
 @dataclass(frozen=True, eq=True, order=True)
@@ -106,7 +115,11 @@ class LEq:
 
     def interpretation(self, kwargs):
         left = var_interpret(self.left, kwargs)
+        if left is None:
+            return True
         right = var_interpret(self.right, kwargs)
+        if right is None:
+            return True
         return left <= right
 
 @dataclass(frozen=True, eq=True, order=True)
@@ -116,7 +129,11 @@ class GEq:
 
     def interpretation(self, kwargs):
         left = var_interpret(self.left, kwargs)
+        if left is None:
+            return True
         right = var_interpret(self.right, kwargs)
+        if right is None:
+            return True
         return left >= right
 
 @dataclass(frozen=True, eq=True, order=True)
@@ -126,7 +143,11 @@ class LT:
 
     def interpretation(self, kwargs):
         left = var_interpret(self.left, kwargs)
+        if left is None:
+            return True
         right = var_interpret(self.right, kwargs)
+        if right is None:
+            return True
         return left < right
 
 @dataclass(frozen=True, eq=True, order=True)
@@ -136,7 +157,11 @@ class GT:
 
     def interpretation(self, kwargs):
         left = var_interpret(self.left, kwargs)
+        if left is None:
+            return True
         right = var_interpret(self.right, kwargs)
+        if right is None:
+            return True
         return left < right
 
 @dataclass(frozen=True, eq=True, order=True)
@@ -146,7 +171,11 @@ class IsIn:
 
     def interpretation(self, kwargs):
         left = var_interpret(self.left, kwargs)
+        if left is None:
+            return True
         right = var_interpret(self.right, kwargs)
+        if right is None:
+            return True
         return left in right
 
 @dataclass(frozen=True, eq=True, order=True)
@@ -155,6 +184,8 @@ class Empty:
 
     def interpretation(self, kwargs):
         left = var_interpret(self.left, kwargs)
+        if left is None:
+            return True
         if isinstance(left, list) or isinstance(left, tuple) or isinstance(left, dict) or isinstance(left, defaultdict):
             return len(left) == 0
         return False
