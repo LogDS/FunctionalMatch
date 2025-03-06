@@ -11,23 +11,35 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Union
 
-from FunctionalMatch.Match import Match
+from FunctionalMatch.Match import Match, rewrite_as
+from FunctionalMatch.PropositionalLogic import jpath_update
 from FunctionalMatch.ReturningFirstObjects import FromJSONPath, FromVariable, Invent
-from FunctionalMatch.functions.Reference import Reference
+from FunctionalMatch.TransformationResults import RewriteAs
+from FunctionalMatch.utils import FrozenDict
 
+
+# from FunctionalMatch.functions.Reference import Reference
+
+@dataclass(frozen=True, eq=True, order=True)
+class MatchMemo2:
+    depth: int
+    result_idx: int
+    query_id: int
+    target_id: int
+    json_path:str
 
 @dataclass(frozen=True, eq=True, order=True)
 class Query:
     select: Match
-    as_: Union[Invent, FromVariable, FromJSONPath]
+    as_: Union[Invent, FromVariable, FromJSONPath, RewriteAs]
 
     def __call__(self, obj):
         assert isinstance(obj, list) or isinstance(obj, tuple) or isinstance(obj, set)
         obj = list(obj)
-        obj_dict = dict()
-        for x in obj:
-            from FunctionalMatch.utils import ObjDepthDeterminer
-            obj_dict[x] = ObjDepthDeterminer.get_depth_dictionary(x)
+        # obj_dict = dict()
+        # for x in obj:
+        #     from FunctionalMatch.utils import ObjDepthDeterminer
+        #     obj_dict[x] = ObjDepthDeterminer.get_depth_dictionary(x)
 
         test, outcome_list = self.select(obj)
         if not test:
@@ -35,27 +47,66 @@ class Query:
         results = []
 
         ## Grouping the outcome list by root objects
-        q = self.select.matching_obj_vars
+        # q = self.select.matching_obj_vars
         grouped_results = defaultdict(list)
-        for dct in outcome_list:
-            ls = []
-            for x in q:
-                assert x in dct
-                curr_obj = dct[x]
-                curr = Reference.from_object(curr_obj)
-                found = False
-                for root, result in obj_dict.items():
-                    if curr in result.root_to_ancestors_ref or curr_obj in result.root_to_ancestors:
-                        ls.append(root)
-                        found = True
-                        break
-                assert found
-            assert len(ls) == len(q)
-            grouped_results[tuple(ls)].append(dct)
+        for idx, (_, match_preserve_info) in enumerate(outcome_list):
+            for x, info in match_preserve_info.items():
+                grouped_results[info.target_id].append(MatchMemo2(len(info.jsonpath.split(".")), idx, int(x[1:]), info.target_id, info.jsonpath))
 
-        for dct in outcome_list:
-            result = self.as_(dct)
-            if result is not None:
-                results.append(result.obj)
+        if isinstance(self.as_, RewriteAs):
+            for key in grouped_results:
+                grouped_results[key] = sorted(grouped_results[key], reverse=not self.as_.isShallow, key=lambda x: x.depth)
+
+            ## Retrieving the original matched value before applying any changes to the data, according to the jpath extracted while matching the object
+            orig = dict()
+            for j in grouped_results:
+                relevant_paths = set()
+                for match_memo in grouped_results[j]:
+                    dollar_i = match_memo.query_id
+                    pi = match_memo.jsonpath
+                    relevant_paths.add(pi)
+                from FunctionalMatch.PropositionalLogic import jpath_interpret
+                orig[j] = {path: jpath_interpret(obj[j], path) for path in relevant_paths }
+
+            ## Applying the first rewriting process, independent of the object of choice, and applying all the changes
+            ## as they were rows. Not considering the nested nature of the data
+            rewritten = []
+            for dct, match_preserve_info in outcome_list:
+                if not isinstance(dct, FrozenDict):
+                    assert isinstance(dct, dict)
+                    dct = FrozenDict.from_dictionary(dct)
+                dct = rewrite_as(dct, self.as_)
+                rewritten.append(dct)
+
+            ## Now, I am updating each object j, recursively, according to the dictionary entry.
+            for j in grouped_results:
+                curr_obj = obj[j]
+                for action in grouped_results[j]:
+                    assert action.target_id == j
+                    dct = rewritten[action.result_idx]
+                    dollar_i = f"${action.query_id}"
+                    assert dollar_i in dct
+                    dollar_i_obj = dct[dollar_i]
+                    j_pi = jpath_interpret(curr_obj, action.json_path)
+                    assert action.json_path in orig[j]
+                    assert orig[j][action.json_path] is not None
+                    if j_pi != orig[j][action.json_path]:
+                        # If by effect of any other previous change the values that I am getting do not match anymore with
+                        # the previous ones, then I am quitting
+                        break
+                    if dollar_i_obj == j_pi:
+                        ## If the changes by extension altered the $i value, then I am using this as a way to update the
+                        ## current object
+                        ## Otherwise, if the values are the same, then I am using the dictionary to instantiate the
+                        ## object according to the previously matched parameters, that might have been updated, and
+                        ## update the object with that instead
+                        from FunctionalMatch import instantiate
+                        dollar_i_obj = instantiate(self.select.query[action.query_id], dct)
+                    curr_obj = jpath_update(curr_obj, action.json_path, dollar_i_obj)
+        else:
+            for dct, match_preserve_info  in outcome_list:
+                result = self.as_(dct)
+                if result is not None:
+                    results.append(result.obj)
         return True, results
 

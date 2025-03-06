@@ -14,5 +14,5 @@ def where(matches, condition):
     assert isinstance(condition, get_args(Prop))
     if len(matches) == 0:
         return True, matches
-    result = [x for x in matches if condition.interpretation(x)]
+    result = [idx for idx, x in enumerate(matches) if condition.interpretation(x)]
     return len(result)>0, result

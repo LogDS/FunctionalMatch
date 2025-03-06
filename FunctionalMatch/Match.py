@@ -9,11 +9,14 @@ __status__ = "Production"
 
 from curses.ascii import isdigit
 # from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, is_dataclass, fields
 from typing import Optional, List
+
+from FunctionalMatch import JSONPath
 # from FunctionalMatch import structural_match
-from FunctionalMatch.PropositionalLogic import Prop
+from FunctionalMatch.PropositionalLogic import Prop, var_interpret, var_update
 from FunctionalMatch.TransformationResults import ReplaceWith
+from FunctionalMatch.functions.structural_match import Variable, var
 from FunctionalMatch.utils import FrozenDict
 
 
@@ -29,12 +32,17 @@ class ExternalMatchByExtesion:
         return func(x)
 
 @dataclass(eq=True, order=True, frozen=True)
+class MatchMemo:
+    target_id: int
+    jsonpath: str
+
+@dataclass(eq=True, order=True, frozen=True)
 class Match:
     query: list
     nested: bool
     where: Optional[Prop]
     extension: List[ExternalMatchByExtesion]
-    replacement: ReplaceWith
+    replacement: List
 
     @property
     def matching_obj_vars(self):
@@ -48,10 +56,10 @@ class Match:
         if result is not None:
             result[number] = target
             outcome.append(result)
-        if self.nested and (result is not None):
-            for k, x in result.items():
-                if not k.startswith("$"):
-                    do_extend, dd = self.structural_match(x, query, f"{number}.{k}") ## TODO: revise recursive call after update
+        if self.nested and (result is not None) and is_dataclass(target):
+            for k in fields(target):
+                    x = getattr(target, k.name)
+                    do_extend, dd = self.structural_match(query, x,f"{number}.{k.name}") ## TODO: revise recursive call after update
                     if do_extend and len(dd) > 0:
                         outcome += dd
         return outcome
@@ -60,7 +68,12 @@ class Match:
         outcome = self.structural_match_single_query(query, target, number)
         if self.where is not None:
             from FunctionalMatch.functions.Where import where
-            test, outcome = where(outcome, self.where)
+            from operator import itemgetter
+            test, idxs = where(outcome, self.where)
+            if len(outcome)>0 and len(idxs)>0:
+                outcome = [outcome[i] for i in idxs]
+            else:
+                outcome = []
         else:
             test = len(outcome) > 0
         return test, outcome
@@ -69,7 +82,7 @@ class Match:
         results = dict()
         for entry_idx, x in enumerate(targets):
             for query_idx, q in enumerate(self.query):
-                cartouche = f"${query_idx}"
+                cartouche = f"${query_idx}@{entry_idx}"
                 test, outcome = self.structural_match(q, x, f"{cartouche}:$")
                 if test:
                     if query_idx not in results:
@@ -87,6 +100,9 @@ class Match:
         from FunctionalMatch.functions.structural_match import equi_join_dictionaries
         outcome = equi_join_dictionaries(list(results.values()))
 
+        outcome_mapping = [{k[:k.find("@")]: MatchMemo(int(k[k.find("@")+1:k.find(":")]), k[k.find(":")+1:]) for k in out.keys() if k.startswith("$") and k.find("@")>0 and k.find(":")>0 and k.find("@")<k.find(":")} for out in outcome]
+        outcome =         [{k[:k.find("@")] if k.startswith("$") and k.find("@")>0 and k.find(":")>0 and k.find("@")<k.find(":") else k: v for k,v in out.items()} for out in outcome]
+
         if (self.extension is not None) and (
                 isinstance(self.extension , list) or isinstance(self.extension ,
                                                                               tuple)) and all(
@@ -99,7 +115,14 @@ class Match:
             outcome = tmp
         if self.where is not None:
             from FunctionalMatch.functions.Where import where
-            test, outcome = where(outcome, self.where)
+            from operator import itemgetter
+            test, idxs = where(outcome, self.where)
+            if len(outcome)>0 and len(idxs)>0:
+                outcome = [outcome[i] for i in idxs]
+                outcome_mapping = [outcome_mapping[i] for i in idxs]
+            else:
+                outcome = []
+                outcome_mapping = []
         else:
             test = len(outcome) > 0
         if test:
@@ -107,7 +130,7 @@ class Match:
                 return test, outcome
             else:
                 outcome = [self.replacement(obj) for obj in outcome]
-        return test, outcome
+        return test, list(zip(outcome, outcome_mapping))
 
     def __call__(self, x):
         if isinstance(x, list) or isinstance(x, tuple) or isinstance(x, set):
@@ -117,7 +140,34 @@ class Match:
         else:
             return self.structural_match_main_loop([x])
 
+def value_extraction_for_rewriting(dictionary, value):
+    if isinstance(value, Variable) and value.name in dictionary:
+        return dictionary[value.name]
+    elif isinstance(value, JSONPath):
+        return var_interpret(value, dictionary)
+    elif is_dataclass(value):
+        from FunctionalMatch import instantiate
+        return instantiate(value, dictionary)
+    else:
+        return None
+
+def rewrite_as(dictionary:FrozenDict, rewriting_rules):
+    assert isinstance(dictionary, FrozenDict)
+    assert isinstance(rewriting_rules, list)
+    for key, value in rewriting_rules:
+        if isinstance(key, str):
+            key = var(key)
+        if isinstance(value, str):
+            value = var(value)
+        result = value_extraction_for_rewriting(dictionary, value)
+        if result is not None:
+            if isinstance(key, JSONPath):
+                dictionary = var_update(result, key, dictionary)
+            elif isinstance(key, Variable):
+                target_key = key.name
+                dictionary = dictionary.update(target_key, result)
+    return dictionary
 
 
-def rewrite_as(dictionary, rewriting_rules):
-    final_objects = {k for k in dictionary.keys() if isinstance(k, str) and k.startswith("$") and all(map(isdigit,k[1:]))}
+
+

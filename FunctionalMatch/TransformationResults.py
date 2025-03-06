@@ -9,7 +9,7 @@ __status__ = "Production"
 
 
 from dataclasses import dataclass, is_dataclass, fields
-from typing import Union
+from typing import Union, List, Tuple
 
 from dacite import from_dict
 
@@ -35,13 +35,13 @@ from FunctionalMatch.utils import FrozenDict
 #     else:
 #         return obj
 
-def replace_with_v2(d:Union[dict,FrozenDict], original:dict):
+def replace_with_v2(d:List[Tuple], original:dict):
     assert isinstance(original, FrozenDict) or isinstance(original, dict)
     if isinstance(original, dict):
         original = FrozenDict.from_dictionary(original)
     if len(original) == 0:
         return original
-    for k, v in d.items():
+    for k, v in d:
         assert isinstance(k, str)
         if isinstance(v, JSONPath):
             from FunctionalMatch.PropositionalLogic import var_interpret
@@ -57,10 +57,18 @@ def replace_with_v2(d:Union[dict,FrozenDict], original:dict):
 
 @dataclass(frozen=True, order=True, eq=True)
 class ReplaceWith:
-    replacement: FrozenDict
+    replacement: List[Tuple[Union[Variable,JSONPath],
+                            Union[Variable,JSONPath,object]]]
 
     def __call__(self, obj: FrozenDict) -> FrozenDict:
         return replace_with_v2(self.replacement, obj)
+
+
+@dataclass(frozen=True, order=True, eq=True)
+class RewriteAs:
+    isShallow: bool
+    replacement: List[Tuple[Union[Variable,JSONPath], Union[Variable,JSONPath,object]]]
+
 
 
 @dataclass(frozen=True, order=True, eq=True)

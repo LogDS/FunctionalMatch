@@ -15,7 +15,7 @@ import os
 
 from FunctionalMatch.Query import Query
 from FunctionalMatch.ReturningFirstObjects import FromJSONPath
-from FunctionalMatch.TransformationResults import ReplaceWith
+from FunctionalMatch.TransformationResults import ReplaceWith, RewriteAs
 from FunctionalMatch.language.MatchingLanguageLexer import MatchingLanguageLexer
 from FunctionalMatch.language.MatchingLanguageParser import MatchingLanguageParser
 from FunctionalMatch.language.MatchingLanguageVisitor import MatchingLanguageVisitor
@@ -65,18 +65,16 @@ class MatchingLanguageVisitor2(MatchingLanguageVisitor):
         if ctx.EXTEND() is not None:
             for child in ctx.extension():
                 extension.append(self.visit(child))
-        replacements = dict()
+        replacements = list()
         if ctx.REPLACE() is not None:
             for child in ctx.replacement():
                 k, v = self.visit(child)
-                replacements[k] = v
-        replacements = ReplaceWith(FrozenDict.from_dictionary(replacements))
+                replacements.append((k, v))
         where = None
         if ctx.WHERE() is not None:
             where = self.visit(ctx.prop())
-        ## TODO: perform the rest, according to the full query semantics!
         from FunctionalMatch.Match import Match
-        query =  Match(q, nested, where, extension, replacements)
+        query =  Match(q, nested, where, extension, ReplaceWith(replacements))
         as_ = None
         if ctx.rewriting is not None:
             from FunctionalMatch.ReturningFirstObjects import Invent
@@ -86,8 +84,30 @@ class MatchingLanguageVisitor2(MatchingLanguageVisitor):
             as_ = FromVariable(self.visit(ctx.variable()))
         elif ctx.jpath() is not None:
             as_ = FromJSONPath(self.visit(ctx.jpath()))
+        elif ctx.rewrite_list() is not None:
+            as_ = self.visit(ctx.rewrite_list())
         return Query(query, as_)
-    
+
+    def visitRewrite_list(self, ctx: MatchingLanguageParser.Rewrite_listContext):
+        if (ctx is None):
+            raise RuntimeError("ERROR MATCHING rewriting")
+        shallow = ctx.SHALLOW() is not None
+        if not shallow:
+            assert ctx.DEEP() is not None
+        result = []
+        for child in ctx.rewrite():
+            obj = self.visit(child)
+            if obj is not None:
+                result.append(obj)
+        return RewriteAs(shallow, result)
+
+    def visitRewrite(self, ctx: MatchingLanguageParser.RewriteContext):
+        if (ctx is None):
+            raise RuntimeError("ERROR MATCHING rewriting object")
+        premise = self.visit(ctx.repl)
+        conseq = self.visit(ctx.as_)
+        return (premise, conseq)
+
     # Visit a parse tree produced by MatchingLanguageParser#p_not.
     def visitP_not(self, ctx: MatchingLanguageParser.P_notContext):
         if (ctx is None):

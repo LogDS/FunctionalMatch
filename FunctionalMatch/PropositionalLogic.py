@@ -15,6 +15,22 @@ import dacite
 
 from FunctionalMatch.utils import FrozenDict
 
+
+def jpath_interpret(obj, path):
+    from jsonpath_ng import jsonpath, parse
+    jsonpath_expr = parse(path)
+    L = [match.value for match in jsonpath_expr.find(asdict(obj))]
+    assert len(L)==1
+    return L[0]
+
+def jpath_update(obj, path, value):
+    from jsonpath_ng import jsonpath, parse
+    jsonpath_expr = parse(path)
+    name_object = type(obj)
+    result_dct = jsonpath_expr.update(asdict(obj), value)
+    result_obj = dacite.from_dict(name_object, result_dct)
+    return result_obj
+
 def var_interpret(obj, kwargs:dict|FrozenDict, keepList=False):
     from FunctionalMatch import JSONPath
     from FunctionalMatch.functions.structural_match import Variable

@@ -16,17 +16,17 @@ from dacite import from_dict
 from FunctionalMatch.utils import FrozenDict
 
 
-# from FunctionalMatch.utils import FrozenDict
-
-def replaceWith(query:object, replacement_map, value_map):
-    raise RuntimeError("Not implemented")
-    # for key, value in replacement_map.items():
-    #     from FunctionalMatch.PropositionalLogic import var_interpret
-    #     result = var_interpret(key, value_map)
-    #     if result is not None:
-    #         if isinstance(result, list):
-    #             for x in result:
-
+# # from FunctionalMatch.utils import FrozenDict
+#
+# def replaceWith(query:object, replacement_map, value_map):
+#     raise RuntimeError("Not implemented")
+#     # for key, value in replacement_map.items():
+#     #     from FunctionalMatch.PropositionalLogic import var_interpret
+#     #     result = var_interpret(key, value_map)
+#     #     if result is not None:
+#     #         if isinstance(result, list):
+#     #             for x in result:
+#
 
 def instantiate(query:object, kwargs:Union[dict,FrozenDict]):
     if type(query).__name__ == "Variable":
