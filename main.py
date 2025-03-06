@@ -5,7 +5,7 @@ from typing import Optional
 from FunctionalMatch.PropositionalLogic import *
 from FunctionalMatch.example.Node import Node
 from FunctionalMatch.language.LanguageMainPoint import parse_query
-
+from FunctionalMatch.utils import ObjDepthDeterminer
 
 
 # def raw_ex():
@@ -28,7 +28,7 @@ from FunctionalMatch.language.LanguageMainPoint import parse_query
 #     print(instance)
 
 
-def test_query():
+def tst_query():
     queries = parse_query("/home/giacomo/PyCharmProjects/FunctionalMatch/query_test.txt")
 
     l1 = Node.leaf(1)
@@ -36,10 +36,11 @@ def test_query():
     l3 = Node.leaf(3)
     s1 = Node(0, l2, l3)
     datum = Node(5, s1, l1)
+    # result = ObjDepthDeterminer.get_depth_dictionary(datum)
 
     for query in queries:
-        result = query(datum)
+        result = query([datum])
         print(result)
 
 if __name__ == '__main__':
-    test_query()
+    tst_query()

@@ -1,6 +1,6 @@
 nested match Node(var(x), var(r), var(l)) in-module "FunctionalMatch.example.Node" // Declaring in which module the class Node is defined
        extend-with "example_ext" in-module "FunctionalMatch.example.Node"          // Declaring in which module the function example_ext is defined
        replace var(y) with var(r)
-       where (var(x) ⩽ (python "0")) || ((jsonpath "$0:$.left.val") = (python "0"))
+       //where (var(x) ⩽ (python "0")) || ((jsonpath "$0:$.left.val") = (python "0"))
        as    Node(var(genoveffo), var(r), var(y))  in-module "FunctionalMatch.example.Node"
 ;

@@ -1,7 +1,7 @@
 __author__ = "Giacomo Bergami"
 __copyright__ = "Copyright 2025, Functional Match"
 __credits__ = ["Giacomo Bergami"]
-__license__ = "GPL"
+__license__ = "GPLv3"
 __version__ = "2.0"
 __maintainer__ = "Giacomo Bergami"
 __email__ = "bergamigiacomo@gmail.com"

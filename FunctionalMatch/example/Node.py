@@ -4,7 +4,7 @@ from typing import Optional
 def example_ext(d):
     return d.update("genoveffo", "blue")
 
-@dataclass
+@dataclass(frozen=True, order=True, unsafe_hash=True, eq=True)
 class Node:
     val: object
     left: Optional['Node']
