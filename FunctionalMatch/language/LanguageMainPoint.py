@@ -23,6 +23,33 @@ from FunctionalMatch.utils import FrozenDict
 
 
 class MatchingLanguageVisitor2(MatchingLanguageVisitor):
+    def __init__(self):
+        self.function_import = dict()
+        self.class_import = dict()
+
+    def visitFunction_import(self, ctx: MatchingLanguageParser.Function_importContext):
+        if (ctx is None):
+            raise RuntimeError("ERROR MATCHING extension")
+        from FunctionalMatch.Match import ExternalMatchByExtesion
+        key = json.loads(ctx.fun.text)
+        assert key not in self.function_import
+        self.function_import[key] = ExternalMatchByExtesion(key, json.loads(ctx.module.text))
+        return None
+
+    def visitClass_import(self, ctx: MatchingLanguageParser.Class_importContext):
+        if (ctx is None):
+            raise RuntimeError("ERROR MATCHING actual tuple")
+        name = ctx.ALPHANAME().getText()
+        module = json.loads(ctx.module.text)
+        d = dict()
+        ## TODO: get dataclass type associated with this
+        import importlib
+        mod = importlib.import_module(module)  # __import__(self.module)
+        func = getattr(mod, name)
+        assert name not in self.class_import
+        self.class_import[name] = func
+        return None
+
     def visitP_json(self, ctx: MatchingLanguageParser.P_jsonContext):
         if (ctx is None):
             raise RuntimeError("ERROR MATCHING JObject")
@@ -45,6 +72,8 @@ class MatchingLanguageVisitor2(MatchingLanguageVisitor):
         if ctx is None:
             yield from []
         else:
+            for statement in ctx.import_statement():
+                self.visit(statement)
             for child in ctx.rule_():
                 result = self.visitRule(child)
                 if result is not None:
@@ -206,7 +235,16 @@ class MatchingLanguageVisitor2(MatchingLanguageVisitor):
         if (ctx is None):
             raise RuntimeError("ERROR MATCHING extension")
         from FunctionalMatch.Match import ExternalMatchByExtesion
-        return ExternalMatchByExtesion(json.loads(ctx.fun.text), json.loads(ctx.module.text))
+        fun = self.function_import.get(json.loads(ctx.fun.text), None)
+        assert fun is not None
+        assert isinstance(fun, ExternalMatchByExtesion)
+        if ctx.WITH() is not None:
+            d = {}
+            for x in ctx.funarg():
+                k, v = self.visitReplacement(x)
+                d[k] = v
+            fun = fun.with_extra_args(FrozenDict.from_dictionary(d))
+        return fun
 
     
     # Visit a parse tree produced by MatchingLanguageParser#actual_object.
@@ -214,13 +252,15 @@ class MatchingLanguageVisitor2(MatchingLanguageVisitor):
         if (ctx is None):
             raise RuntimeError("ERROR MATCHING actual tuple")
         name = ctx.ALPHANAME().getText()
-        module = json.loads(ctx.module.text)
-        d = dict()
-        ## TODO: get dataclass type associated with this
-        import importlib
-        mod = importlib.import_module(module)  # __import__(self.module)
-        func = getattr(mod, name)
+        # module = json.loads(ctx.module.text)
+        # d = dict()
+        # ## TODO: get dataclass type associated with this
+        # import importlib
+        # mod = importlib.import_module(module)  # __import__(self.module)
+        # func = getattr(mod, name)
         args = [self.visit(x) for x in ctx.object_()]
+        func = self.class_import.get(name, None)
+        assert func is not None
         return func(*args)
 
     
@@ -229,13 +269,15 @@ class MatchingLanguageVisitor2(MatchingLanguageVisitor):
         if (ctx is None):
             raise RuntimeError("ERROR MATCHING actual tuple")
         name = ctx.ALPHANAME().getText()
-        module = json.loads(ctx.module.text)
+        # module = json.loads(ctx.module.text)
         d = dict()
-        import importlib
-        mod = importlib.import_module(module)  # __import__(self.module)
-        func = getattr(mod, name)
+        # import importlib
+        # mod = importlib.import_module(module)  # __import__(self.module)
+        # func = getattr(mod, name)
         ## TODO: get dataclass type associated with this
-        type = None
+        # type = None
+        func = self.class_import.get(name, None)
+        assert func is not None
         for key, value in zip(ctx.STRING(), ctx.object_()):
             key = json.loads(key.getText())
             d[key] = self.visit(value)
@@ -268,7 +310,15 @@ class MatchingLanguageVisitor2(MatchingLanguageVisitor):
         from FunctionalMatch import var
         return var(ctx.ALPHANAME().getText())
 
-    
+    def visitFunarg(self, ctx: MatchingLanguageParser.FunargContext):
+        if ctx is None:
+            raise RuntimeError("ERROR MATCHING Funarg")
+        key = ctx.ALPHANAME().getText()
+        value = json.loads(ctx.STRING().getText())
+        if ctx.PYTHON() is not None:
+            value = json.loads(value)
+        return (key, value)
+
     # Visit a parse tree produced by MatchingLanguageParser#replacement.
     def visitReplacement(self, ctx: MatchingLanguageParser.ReplacementContext):
         if (ctx is None):

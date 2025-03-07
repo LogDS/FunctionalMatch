@@ -14,6 +14,16 @@ class MatchingLanguageVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by MatchingLanguageParser#function_import.
+    def visitFunction_import(self, ctx:MatchingLanguageParser.Function_importContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by MatchingLanguageParser#class_import.
+    def visitClass_import(self, ctx:MatchingLanguageParser.Class_importContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by MatchingLanguageParser#rule.
     def visitRule(self, ctx:MatchingLanguageParser.RuleContext):
         return self.visitChildren(ctx)
@@ -136,6 +146,11 @@ class MatchingLanguageVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by MatchingLanguageParser#rewrite_list.
     def visitRewrite_list(self, ctx:MatchingLanguageParser.Rewrite_listContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by MatchingLanguageParser#funarg.
+    def visitFunarg(self, ctx:MatchingLanguageParser.FunargContext):
         return self.visitChildren(ctx)
 
 

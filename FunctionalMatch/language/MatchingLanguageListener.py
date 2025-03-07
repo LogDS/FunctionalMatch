@@ -17,6 +17,24 @@ class MatchingLanguageListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by MatchingLanguageParser#function_import.
+    def enterFunction_import(self, ctx:MatchingLanguageParser.Function_importContext):
+        pass
+
+    # Exit a parse tree produced by MatchingLanguageParser#function_import.
+    def exitFunction_import(self, ctx:MatchingLanguageParser.Function_importContext):
+        pass
+
+
+    # Enter a parse tree produced by MatchingLanguageParser#class_import.
+    def enterClass_import(self, ctx:MatchingLanguageParser.Class_importContext):
+        pass
+
+    # Exit a parse tree produced by MatchingLanguageParser#class_import.
+    def exitClass_import(self, ctx:MatchingLanguageParser.Class_importContext):
+        pass
+
+
     # Enter a parse tree produced by MatchingLanguageParser#rule.
     def enterRule(self, ctx:MatchingLanguageParser.RuleContext):
         pass
@@ -239,6 +257,15 @@ class MatchingLanguageListener(ParseTreeListener):
 
     # Exit a parse tree produced by MatchingLanguageParser#rewrite_list.
     def exitRewrite_list(self, ctx:MatchingLanguageParser.Rewrite_listContext):
+        pass
+
+
+    # Enter a parse tree produced by MatchingLanguageParser#funarg.
+    def enterFunarg(self, ctx:MatchingLanguageParser.FunargContext):
+        pass
+
+    # Exit a parse tree produced by MatchingLanguageParser#funarg.
+    def exitFunarg(self, ctx:MatchingLanguageParser.FunargContext):
         pass
 
 

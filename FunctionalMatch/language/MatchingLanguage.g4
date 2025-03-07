@@ -1,6 +1,10 @@
 grammar MatchingLanguage;
 // java -jar /home/giacomo/Scaricati/antlr-4.13.2-complete.jar -visitor  -Dlanguage=Python3 MatchingLanguage.g4
-language: (rule ';')+;
+language: import_statement* (rule ';')+;
+
+import_statement: IMPORT fun=STRING OVERMODULE module=STRING #function_import
+                | IMPORT ALPHANAME  OVERMODULE module=STRING #class_import
+                ;
 
 rule: NESTED? MATCHING query=match_multiobj
        (EXTEND (extension ',')* extension )?
@@ -29,9 +33,9 @@ prop: LPAR prop RPAR #p_par
     | PYTHON STRING  #p_json
     ;
 
-extension: fun=STRING OVERMODULE module=STRING;
-object: ALPHANAME LPAR ((object ',')+ object)? RPAR  OVERMODULE module=STRING                     #actual_object
-      | ALPHANAME LPAR ((STRING EQ object ',')+ STRING EQ object)? RPAR  OVERMODULE module=STRING #actual_tuple_of_type_and_args
+extension: fun=STRING (WITH funarg+)?;
+object: ALPHANAME LPAR ((object ',')+ object)? RPAR                  #actual_object
+      | ALPHANAME LPAR ((STRING EQ object ',')+ STRING EQ object)? RPAR  #actual_tuple_of_type_and_args
       |  variable                                                                                 #actual_variable
       |  IGNORE                                                                                   #ignoring_argument
       ;
@@ -39,9 +43,11 @@ jpath : JSONPATH STRING;
 variable: 'var' LPAR ALPHANAME RPAR ;
 rewrite_list: (SHALLOW|DEEP) REWRITE (rewrite ',')* rewrite;
 
+funarg:      ALPHANAME ':' ((PYTHON? STRING));
 replacement: variable           WITH as=object|variable|jpath;
 rewrite:     repl=variable|jpath   AS as=object|variable|jpath;
 
+IMPORT: 'import';
 SHALLOW: 'shallow';
 DEEP: 'deep';
 AS: 'as';
