@@ -42,5 +42,12 @@ def tst_query():
         result = query([datum])
         print(result)
 
+def parmenides_db_write():
+    from FunctionalMatch.example.parmenides.Parmenides import Parmenides, generate_parmenides_graph
+    p = Parmenides("giacomo", "omocaig", "localhost", 5432)
+    p.start()
+    generate_parmenides_graph(p, "/home/giacomo/PyCharmProjects/FunctionalMatch/data")
+    p.stop()
+
 if __name__ == '__main__':
-    tst_query()
+    parmenides_db_write()
