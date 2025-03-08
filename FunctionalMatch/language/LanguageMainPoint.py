@@ -27,6 +27,9 @@ class MatchingLanguageVisitor2(MatchingLanguageVisitor):
         self.function_import = dict()
         self.class_import = dict()
 
+    def visitPar(self, ctx: MatchingLanguageParser.ParContext):
+        return self.visit(ctx.object_())
+
     def visitFunction_import(self, ctx: MatchingLanguageParser.Function_importContext):
         if (ctx is None):
             raise RuntimeError("ERROR MATCHING extension")
@@ -241,12 +244,16 @@ class MatchingLanguageVisitor2(MatchingLanguageVisitor):
         if ctx.WITH() is not None:
             d = {}
             for x in ctx.funarg():
-                k, v = self.visitReplacement(x)
+                k, v = self.visitFunarg(x)
                 d[k] = v
             fun = fun.with_extra_args(FrozenDict.from_dictionary(d))
         return fun
 
-    
+    def visitActual_unary_function_with_args(self, ctx: MatchingLanguageParser.Actual_unary_function_with_argsContext):
+        if ctx is None:
+            raise RuntimeError("ERROR MATCHING Actual Unary Function")
+        return self.visit(ctx.extension())
+
     # Visit a parse tree produced by MatchingLanguageParser#actual_object.
     def visitActual_object(self, ctx: MatchingLanguageParser.Actual_objectContext):
         if (ctx is None):
@@ -314,6 +321,8 @@ class MatchingLanguageVisitor2(MatchingLanguageVisitor):
         if ctx is None:
             raise RuntimeError("ERROR MATCHING Funarg")
         key = ctx.ALPHANAME().getText()
+        if ctx.variable() is not None:
+            return (key, self.visit(ctx.variable()))
         value = json.loads(ctx.STRING().getText())
         if ctx.PYTHON() is not None:
             value = json.loads(value)

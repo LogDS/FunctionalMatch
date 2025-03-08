@@ -224,12 +224,30 @@ class MatchingLanguageListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by MatchingLanguageParser#actual_unary_function_with_args.
+    def enterActual_unary_function_with_args(self, ctx:MatchingLanguageParser.Actual_unary_function_with_argsContext):
+        pass
+
+    # Exit a parse tree produced by MatchingLanguageParser#actual_unary_function_with_args.
+    def exitActual_unary_function_with_args(self, ctx:MatchingLanguageParser.Actual_unary_function_with_argsContext):
+        pass
+
+
     # Enter a parse tree produced by MatchingLanguageParser#ignoring_argument.
     def enterIgnoring_argument(self, ctx:MatchingLanguageParser.Ignoring_argumentContext):
         pass
 
     # Exit a parse tree produced by MatchingLanguageParser#ignoring_argument.
     def exitIgnoring_argument(self, ctx:MatchingLanguageParser.Ignoring_argumentContext):
+        pass
+
+
+    # Enter a parse tree produced by MatchingLanguageParser#par.
+    def enterPar(self, ctx:MatchingLanguageParser.ParContext):
+        pass
+
+    # Exit a parse tree produced by MatchingLanguageParser#par.
+    def exitPar(self, ctx:MatchingLanguageParser.ParContext):
         pass
 
 

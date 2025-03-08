@@ -129,8 +129,18 @@ class MatchingLanguageVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by MatchingLanguageParser#actual_unary_function_with_args.
+    def visitActual_unary_function_with_args(self, ctx:MatchingLanguageParser.Actual_unary_function_with_argsContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by MatchingLanguageParser#ignoring_argument.
     def visitIgnoring_argument(self, ctx:MatchingLanguageParser.Ignoring_argumentContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by MatchingLanguageParser#par.
+    def visitPar(self, ctx:MatchingLanguageParser.ParContext):
         return self.visitChildren(ctx)
 
 
