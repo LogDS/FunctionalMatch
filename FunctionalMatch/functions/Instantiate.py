@@ -36,7 +36,8 @@ def instantiate(query:object, kwargs:Union[dict,FrozenDict]):
     elif is_dataclass(query):
         obj_inst = dict()
         for field in fields(query):
-            obj_inst[field.name] = instantiate(getattr(query, field.name), kwargs)
+            from FunctionalMatch.Match import evaluate_structural_function
+            obj_inst[field.name] = evaluate_structural_function(instantiate(getattr(query, field.name), kwargs))
         return from_dict(type(query), obj_inst)
     else:
         return query

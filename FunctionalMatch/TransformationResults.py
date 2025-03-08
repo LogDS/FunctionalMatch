@@ -51,7 +51,8 @@ def replace_with_v2(d:List[Tuple], original:dict):
                 original = original.update(k, original.get(v))
         else:
             from FunctionalMatch import instantiate
-            original = original.update(k, instantiate(v, original))
+            from FunctionalMatch.Match import evaluate_structural_function
+            original = original.update(k, evaluate_structural_function(instantiate(v, original)))
     return original
 
 

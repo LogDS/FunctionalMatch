@@ -1,6 +1,11 @@
-nested match Node(var(x), var(r), var(l)) in-module "FunctionalMatch.example.Node" // Declaring in which module the class Node is defined
-       extend-with "example_ext" in-module "FunctionalMatch.example.Node"          // Declaring in which module the function example_ext is defined
-       replace var(y) with var(r)
-       where (var(x) ⩽ (python "0")) || ((jsonpath "$0:$.left.val") = (python "0"))
-       as    Node(var(genoveffo), var(r), var(y))  in-module "FunctionalMatch.example.Node"
+import "example_ext" in-module "FunctionalMatch.example.Node" // Determining where the function is declared
+import "example_call" in-module "FunctionalMatch.example.Node" // Determining where the function is declared
+import Node          in-module "FunctionalMatch.example.Node" // Determining where the class is declared
+
+
+nested match Node(var(x), var(r), var(l))                       // Performing pattern matching with the node class and some arguments of interest
+       extend-with "example_ext" with printer : "ciao"          // Passing the function some extra arguments with the with statement.
+       replace var(y) with var(r)                               // Performing some variable replacement operations
+       where (var(x) ⩽ (python "0")) || ((jsonpath "$0:$.left.val") = (python "0")) // Filtering the resulting rows according to somethihng
+       as    Node(var(genoveffo), "example_call" ( var(r) ), var(y))               // Newly instantiating something
 ;

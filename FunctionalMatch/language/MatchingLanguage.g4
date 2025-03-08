@@ -37,7 +37,7 @@ extension: fun=STRING (WITH funarg+)?;
 object: ALPHANAME LPAR ((object ',')+ object)? RPAR                  #actual_object
       | ALPHANAME LPAR ((STRING EQ object ',')+ STRING EQ object)? RPAR  #actual_tuple_of_type_and_args
       |  variable                                                                                 #actual_variable
-      | STRING '(' object ')' (WITH funarg+)?                                                                               #actual_unary_function_with_args
+      | STRING '(' object ')' (WITH funarg+)?                         #actual_unary_function_with_args
       |  IGNORE                                                                                   #ignoring_argument
       | '(' object ')'   #par
       ;

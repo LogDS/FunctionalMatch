@@ -252,7 +252,17 @@ class MatchingLanguageVisitor2(MatchingLanguageVisitor):
     def visitActual_unary_function_with_args(self, ctx: MatchingLanguageParser.Actual_unary_function_with_argsContext):
         if ctx is None:
             raise RuntimeError("ERROR MATCHING Actual Unary Function")
-        return self.visit(ctx.extension())
+        from FunctionalMatch.Match import ExternalMatchByExtesion
+        fun = self.function_import.get(json.loads(ctx.STRING().getText()), None)
+        assert fun is not None
+        assert isinstance(fun, ExternalMatchByExtesion)
+        if ctx.WITH() is not None:
+            d = {}
+            for x in ctx.funarg():
+                k, v = self.visitFunarg(x)
+                d[k] = v
+            fun = fun.with_extra_args(FrozenDict.from_dictionary(d))
+        return fun.add_packed_args(self.visit(ctx.object_()))
 
     # Visit a parse tree produced by MatchingLanguageParser#actual_object.
     def visitActual_object(self, ctx: MatchingLanguageParser.Actual_objectContext):

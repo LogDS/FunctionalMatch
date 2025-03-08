@@ -72,7 +72,19 @@ def depth_dictionary(obj):
             continue
         visited.add(obj)
 
+def object_magic(id):
+    import ctypes
+    return ctypes.cast(id, ctypes.py_object).value
 
+def transitive_closure(a):
+    closure = set(a)
+    while True:
+        new_relations = set((x,w) for x,y in closure for q,w in closure if q == y)
+        closure_until_now = closure | new_relations
+        if closure_until_now == closure:
+            break
+        closure = closure_until_now
+    return closure
 
 class FrozenDict(collections.abc.Mapping):
     """author: https://stackoverflow.com/a/2704866/1376095"""
@@ -84,6 +96,18 @@ class FrozenDict(collections.abc.Mapping):
     @staticmethod
     def from_dictionary(d):
         return FrozenDict(**d)
+
+    def __dict__(self):
+        return self._d
+
+    def keys(self):
+        return self._d.keys()
+
+    def values(self):
+        return self._d.values()
+
+    def dict(self):
+        return self._d
 
     def __contains__(self, key):
         return key in self._d

@@ -11,7 +11,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Union
 
-from FunctionalMatch.Match import Match, rewrite_as
+from FunctionalMatch.Match import Match, rewrite_as, evaluate_structural_function
 from FunctionalMatch.PropositionalLogic import jpath_update
 from FunctionalMatch.ReturningFirstObjects import FromJSONPath, FromVariable, Invent
 from FunctionalMatch.TransformationResults import RewriteAs
@@ -101,11 +101,11 @@ class Query:
                         ## object according to the previously matched parameters, that might have been updated, and
                         ## update the object with that instead
                         from FunctionalMatch import instantiate
-                        dollar_i_obj = instantiate(self.select.query[action.query_id], dct)
+                        dollar_i_obj = evaluate_structural_function(instantiate(self.select.query[action.query_id], dct))
                     curr_obj = jpath_update(curr_obj, action.json_path, dollar_i_obj)
         else:
             for dct, match_preserve_info  in outcome_list:
-                result = self.as_(dct)
+                result = evaluate_structural_function(self.as_(dct))
                 if result is not None:
                     results.append(result.obj)
         return True, results

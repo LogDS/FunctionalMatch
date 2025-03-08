@@ -7,6 +7,8 @@ __maintainer__ = "Giacomo Bergami"
 __email__ = "bergamigiacomo@gmail.com"
 __status__ = "Production"
 
+import re
+
 from rdflib import Namespace
 from rdflib import Graph, URIRef, BNode, Literal, XSD
 from sqlalchemy import create_engine
@@ -35,7 +37,8 @@ class RDFGraph(object):
     This class provides PostgreSQL support for RDF graphs via RDFLib and SQLAlchemy.
     This allows to load
     """
-    def __init__(self, name, namespace, user, password, hostame, port, database):
+    def __init__(self, name, namespace, user, password, hostame, port, database, databaseConn=True):
+        self.databaseConn = databaseConn
         self.database = database
         self.port = port
         self.hostame = hostame
@@ -61,12 +64,16 @@ class RDFGraph(object):
             return False
         self._started = True
         self._stopped = False
+        return True
 
     def clear(self):
         if self._started and self.uri is not None:
             self.graph.destroy(self.uri)
             return True
         return False
+
+    def parse(self, file):
+        self.graph.parse(file)
 
     def create_property(self, name, comment=None):
         if name not in self.relationships:
@@ -218,6 +225,259 @@ class RDFGraph(object):
     def serialize(self, filename):
         self.graph.serialize(destination=filename)
 
+    def _single_unary_query(self, knows_query, f=None):
+        qres = self.graph.query(knows_query)
+        for row in qres:
+            yield f(row) if f is not None else row
+
+    def string_query(self, knows_query, attr=None):
+        return self._single_unary_query(knows_query, str if attr is None else lambda x: str(getattr(x, attr)))
+
+    def _run_custom_sparql_query(self, query, bindings=None):
+        ## You can test custom SPARQL queries in https://atomgraph.github.io/SPARQL-Playground/
+        qres = self.graph.query(query, initBindings=bindings)
+        for x in qres:
+            yield x.asdict()
+
+    def single_edge_src_multipoint(self, src, src_spec, edge_type, dst):
+        knows_query = """
+         SELECT DISTINCT ?src ?edge_type ?dst ?src_label ?src_spec ?dst_label
+         WHERE {
+             ?src ?edge_type ?dst.
+             ?src parmenides:entryPoint ?src_entry.
+             ?src_entry rdfs:label ?src_label.
+             ?src_multi parmenides:hasAdjective ?src_spec_node.
+             ?src_spec_node rdfs:label ?src_spec.
+             ?dst rdfs:label ?dst_label .
+         }"""
+        bindings = {}
+        srcBool = False
+        srcSpecBool = False
+        edgeBool = False
+        dstBool = False
+        if not src.startswith("^"):
+            bindings["src_label"] = Literal(src, datatype=XSD.string)
+        else:
+            srcBool = True
+        if not src_spec.startswith("^"):
+            bindings["src_spec"] = Literal(src_spec, datatype=XSD.string)
+        else:
+            srcSpecBool = True
+        if not edge_type.startswith("^"):
+            bindings["edge_type"] = URIRef(self.namespace[edge_type])
+        else:
+            edgeBool = True
+        if not dst.startswith("^"):
+            bindings["dst_label"] = Literal(dst, datatype=XSD.string)
+        else:
+            dstBool = True
+        qres = self.graph.query(knows_query, initBindings=bindings)
+        for x in qres:
+            d = x.asdict()
+            k = dict()
+            k["@^hasResult"] = True
+            if srcBool:
+                k[src[1:]] = str(d.get("src_label"))
+            if srcSpecBool:
+                k[src_spec[1:]] = str(d.get("src_spec"))
+            if dstBool:
+                k[dst[1:]] = str(d.get("dst_label"))
+            if edgeBool:
+                k[edge_type[1:]] = str(d.get("edge_type"))[len(self.namespace):]
+            yield k
+
+    def single_edge_dst_binary_capability(self, src, edge_type, verb, subj, obj):
+        knows_query = """
+         SELECT DISTINCT ?src ?edge_type ?dst ?src_label ?verb ?subj ?obj
+         WHERE {
+             ?src ?edge_type ?dst.
+             ?dst parmenides:entryPoint ?verb_e.
+             ?verb_e rdfs:label ?verb. 
+             ?dst parmenides:subject ?subj_e.
+             ?subj_e rdfs:label ?subj. 
+             ?dst parmenides:d_object ?obj_e.
+             ?obj_e rdfs:label ?obj. 
+             ?src rdfs:label ?src_label.
+         }"""
+        bindings = {}
+        srcBool = False
+        edgeBool = False
+        verbBool = False
+        subjBool = False
+        objBool = False
+        if not src.startswith("^"):
+            bindings["src_label"] = Literal(src, datatype=XSD.string)
+        else:
+            srcBool = True
+        if not edge_type.startswith("^"):
+            bindings["edge_type"] = URIRef(self.namespace[edge_type])
+        else:
+            edgeBool = True
+        if not verb.startswith("^"):
+            bindings["verb"] = Literal(verb, datatype=XSD.string)
+        else:
+            verbBool = True
+        if not subj.startswith("^"):
+            bindings["subj"] = Literal(subj, datatype=XSD.string)
+        else:
+            subjBool = True
+        if not obj.startswith("^"):
+            bindings["obj"] = Literal(obj, datatype=XSD.string)
+        else:
+            objBool = True
+        qres = self.graph.query(knows_query, initBindings=bindings)
+        for x in qres:
+            d = x.asdict()
+            k = dict()
+            k["@^hasResult"] = True
+            if srcBool:
+                k[src[1:]] = str(d.get("src_label"))
+            if subjBool:
+                k[subj[1:]] = str(d.get("subj"))
+            if objBool:
+                k[obj[1:]] = str(d.get("obj"))
+            if verbBool:
+                k[verb[1:]] = str(d.get("verb"))
+            if edgeBool:
+                k[edge_type[1:]] = str(d.get("edge_type"))[len(self.namespace):]
+            yield k
+
+    def single_edge_dst_unary_capability(self, src, edge_type, verb, subj):
+        knows_query = """
+         SELECT DISTINCT ?src ?edge_type ?dst ?src_label ?verb ?subj
+         WHERE {
+             ?src ?edge_type ?dst.
+             ?dst parmenides:entryPoint ?verb_e.
+             ?verb_e rdfs:label ?verb. 
+             ?dst parmenides:subject ?subj_e.
+             ?subj_e rdfs:label ?subj. 
+             ?src rdfs:label ?src_label.
+         }"""
+        bindings = {}
+        srcBool = False
+        edgeBool = False
+        verbBool = False
+        subjBool = False
+        objBool = False
+        if not src.startswith("^"):
+            bindings["src_label"] = Literal(src, datatype=XSD.string)
+        else:
+            srcBool = True
+        if not edge_type.startswith("^"):
+            bindings["edge_type"] = URIRef(self.namespace[edge_type])
+        else:
+            edgeBool = True
+        if not verb.startswith("^"):
+            bindings["verb"] = Literal(verb, datatype=XSD.string)
+        else:
+            verbBool = True
+        if not subj.startswith("^"):
+            bindings["subj"] = Literal(subj, datatype=XSD.string)
+        else:
+            subjBool = True
+        qres = self.graph.query(knows_query, initBindings=bindings)
+        for x in qres:
+            d = x.asdict()
+            k = dict()
+            k["@^hasResult"] = True
+            if srcBool:
+                k[src[1:]] = str(d.get("src_label"))
+            if subjBool:
+                k[subj[1:]] = str(d.get("subj"))
+            if verbBool:
+                k[verb[1:]] = str(d.get("verb"))
+            if edgeBool:
+                k[edge_type[1:]] = str(d.get("edge_type"))[len(self.namespace):]
+            yield k
+
+    def single_edge(self, src, edge_type, dst):
+        m = re.match(r"(?P<main>[^\[]+)\[(?P<spec>[^\]]+)\]", src)
+        if m:
+            yield from self.single_edge_src_multipoint(m.group('main'), m.group('spec'), edge_type, dst)
+            return
+        m = re.match(r"(?P<main>[^\(]+)\((?P<subj>[^\,)]+),(?P<obj>[^\)]+)\)", dst)
+        if m:
+            yield from self.single_edge_dst_binary_capability(src, edge_type, m.group('main'), m.group('subj'),
+                                                              m.group('obj'))
+            return
+        m = re.match(r"(?P<main>[^\(]+)\((?P<subj>[^\)]+)\)", dst)
+        if m:
+            yield from self.single_edge_dst_unary_capability(src, edge_type, m.group('main'), m.group('subj'))
+            return
+        knows_query = """
+         SELECT DISTINCT ?src ?edge_type ?dst ?src_label ?dst_label
+         WHERE {
+             ?src ?edge_type ?dst.
+             ?src rdfs:label ?src_label.
+             ?dst rdfs:label ?dst_label .
+         }"""
+        bindings = {}
+        srcBool = False
+        edgeBool = False
+        dstBool = False
+        if not src.startswith("^"):
+            bindings["src_label"] = Literal(src, datatype=XSD.string)
+        else:
+            srcBool = True
+        if not edge_type.startswith("^"):
+            bindings["edge_type"] = URIRef(self.namespace[edge_type])
+        else:
+            edgeBool = True
+        if not dst.startswith("^"):
+            bindings["dst_label"] = Literal(dst, datatype=XSD.string)
+        else:
+            dstBool = True
+        qres = self.graph.query(knows_query, initBindings=bindings)
+        for x in qres:
+            d = x.asdict()
+            k = dict()
+            k["@^hasResult"] = True
+            if srcBool:
+                k[src[1:]] = str(d.get("src_label"))
+            if dstBool:
+                k[dst[1:]] = str(d.get("dst_label"))
+            if edgeBool:
+                k[edge_type[1:]] = str(d.get("edge_type"))[len(self.namespace):]
+            yield k
+
+    def extractPureHierarchy(self, t, flip=False):
+        ye = list(self.single_edge("^src", t, "^dst"))
+        if len(ye) == 0:
+            return set()
+        elif flip:
+            return {(x["dst"], x["src"]) for x in ye}
+        else:
+            return {(x["src"], x["dst"]) for x in ye}
+
+    def isA(self, src, type):
+        knows_query = """
+         SELECT DISTINCT ?src ?dst
+         WHERE {
+             ?src a ?dst.
+             ?src rdfs:label ?src_label.
+         }"""
+        bindings = {}
+        srcBool = False
+        dstBool = False
+        if not src.startswith("^"):
+            bindings["src_label"] = Literal(src, datatype=XSD.string)
+        else:
+            srcBool = True
+        if not type.startswith("^"):
+            bindings["dst"] = URIRef(self.namespace[type])
+        else:
+            dstBool = True
+        qres = self.graph.query(knows_query, initBindings=bindings)
+        for x in qres:
+            d = x.asdict()
+            k = dict()
+            k["@^hasResult"] = True
+            if srcBool:
+                k[src[1:]] = str(d.get("src_label"))
+            if dstBool:
+                k[type[1:]] = str(d.get("dst"))[len(self.namespace):]
+            yield k
+
     def stop(self):
         if (self._stopped) or (not self._started):
             self._stopped = True
@@ -228,12 +488,19 @@ class RDFGraph(object):
         self._stopped = True
         return True
 
-    def _actual_start(self):
-        self.graph = Graph("SQLAlchemy", identifier=self.ident)
+    def hasDBStoredData(self):
         engine = create_engine('postgresql://{}:{}@{}:{}/{}'.format(self.user,self.password,self.hostame,self.port, self.database))
-        if not database_exists(engine.url):
-            create_database(engine.url)
-        self.graph.open(self.uri, create=True)
+        return database_exists(engine.url)
+
+    def _actual_start(self):
+        if self.databaseConn:
+            self.graph = Graph("SQLAlchemy", identifier=self.ident)
+            engine = create_engine('postgresql://{}:{}@{}:{}/{}'.format(self.user,self.password,self.hostame,self.port, self.database))
+            if not self.hasDBStoredData():
+                create_database(engine.url)
+            self.graph.open(self.uri, create=True)
+        else:
+            self.graph = Graph(identifier=self.ident)
         self.names = dict()
         self.relationships = dict()
         self.classes = dict()
