@@ -31,6 +31,7 @@ prop: LPAR prop RPAR #p_par
     | variable       #p_var
     | jpath          #p_jpath
     | PYTHON STRING  #p_json
+    | CALL STRING (WITH funarg+)?    #p_call
     ;
 
 extension: fun=STRING (WITH funarg+)?;
@@ -67,6 +68,7 @@ REPLACE: 'replace';
 REWRITE: 'rewrite';
 WITH: 'with';
 OVERMODULE: 'in-module';
+CALL: 'call';
 AND: '&&';
 OR: '||';
 LEQ: '⩽'|'≤';

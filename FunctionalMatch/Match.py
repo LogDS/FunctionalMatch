@@ -16,7 +16,7 @@ import dacite
 
 from FunctionalMatch import JSONPath
 # from FunctionalMatch import structural_match
-from FunctionalMatch.PropositionalLogic import Prop, var_interpret, var_update
+from FunctionalMatch.PropositionalLogic import Prop, var_interpret, var_update, ExternalPredicateByExtesion
 from FunctionalMatch.TransformationResults import ReplaceWith
 from FunctionalMatch.functions.structural_match import Variable, var
 from FunctionalMatch.utils import FrozenDict
@@ -28,6 +28,9 @@ class ExternalMatchByExtesion:
     module: str
     extra_args: Optional[FrozenDict] = None
     packed_call: Optional[object] = None ## TODO: how to call the function when an argument is provided
+
+    def asPredicate(self):
+        return ExternalPredicateByExtesion(self.module, self.function_name, self.extra_args)
 
     def with_extra_args(self, args):
         if args is None:
@@ -48,6 +51,9 @@ class ExternalMatchByExtesion:
 
     def callMe(self):
         return self(self.packed_call)
+
+    def interpretation(self, kwargs):
+        return self.__call__(kwargs)
 
     def __call__(self, x):
         import importlib

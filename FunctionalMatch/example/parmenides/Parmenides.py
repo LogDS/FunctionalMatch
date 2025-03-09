@@ -59,6 +59,10 @@ class ParmenidesSingleton(object):
     def __init__(self):
         raise RuntimeError('Call instance() instead')
 
+    @staticmethod
+    def isReady():
+        return (ParmenidesSingleton._instance is not None) and (ParmenidesSingleton._instance.parmenides is not None)
+
     @classmethod
     def instance(cls):
         if cls._instance is None:

@@ -107,6 +107,15 @@ class MatchingLanguageListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by MatchingLanguageParser#p_call.
+    def enterP_call(self, ctx:MatchingLanguageParser.P_callContext):
+        pass
+
+    # Exit a parse tree produced by MatchingLanguageParser#p_call.
+    def exitP_call(self, ctx:MatchingLanguageParser.P_callContext):
+        pass
+
+
     # Enter a parse tree produced by MatchingLanguageParser#p_var.
     def enterP_var(self, ctx:MatchingLanguageParser.P_varContext):
         pass

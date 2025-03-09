@@ -11,7 +11,7 @@ __status__ = "Production"
 from dataclasses import is_dataclass, fields, dataclass
 from typing import Union
 
-from dacite import from_dict
+from dacite import from_dict, Config
 
 from FunctionalMatch.utils import FrozenDict
 
@@ -42,7 +42,7 @@ def instantiate(query:object, kwargs:Union[dict,FrozenDict]):
             for field in fields(query):
                 from FunctionalMatch.Match import evaluate_structural_function
                 obj_inst[field.name] = evaluate_structural_function(instantiate(getattr(query, field.name), kwargs))
-            return from_dict(type(query), obj_inst)
+            return from_dict(type(query), obj_inst, Config(check_types=False))
     else:
         return query
 

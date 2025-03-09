@@ -27,6 +27,21 @@ class MatchingLanguageVisitor2(MatchingLanguageVisitor):
         self.function_import = dict()
         self.class_import = dict()
 
+    def visitP_call(self, ctx: MatchingLanguageParser.P_callContext):
+        if ctx is None:
+            raise RuntimeError("ERROR MATCHING Actual Unary Function")
+        from FunctionalMatch.Match import ExternalMatchByExtesion
+        fun = self.function_import.get(json.loads(ctx.STRING().getText()), None)
+        assert fun is not None
+        assert isinstance(fun, ExternalMatchByExtesion)
+        if ctx.WITH() is not None:
+            d = {}
+            for x in ctx.funarg():
+                k, v = self.visitFunarg(x)
+                d[k] = v
+            fun = fun.with_extra_args(FrozenDict.from_dictionary(d))
+        return fun.asPredicate()
+
     def visitActual_string(self, ctx: MatchingLanguageParser.Actual_stringContext):
         if (ctx is None):
             raise RuntimeError("ERROR MATCHING actual string")

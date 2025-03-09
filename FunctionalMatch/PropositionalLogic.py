@@ -9,7 +9,7 @@ __status__ = "Production"
 
 from collections import defaultdict
 from dataclasses import dataclass, is_dataclass, asdict, fields
-from typing import Union
+from typing import Union, Optional
 
 import dacite
 
@@ -279,11 +279,23 @@ class Not:
 class ExternalPredicateByExtesion:
     module: str
     function_name: str
+    extra_args: Optional[FrozenDict] = None
 
     def __call__(self, x):
         import importlib
         mod = importlib.import_module(self.module) #__import__(self.module)
         func = getattr(mod, self.function_name)
-        return func(x)
+        assert isinstance(x, dict) or isinstance(x, FrozenDict)
+        d = dict()
+        for k, v in x.items():
+            d[k] = v
+        if self.extra_args is not None:
+            for k, v in self.extra_args.items():
+                d[k] = v
+        return func(FrozenDict.from_dictionary(d))
+
+    def interpretation(self, kwargs):
+        return self.__call__(kwargs)
+
 
 Prop = Union[And, Or, Impl, Not, Eq, NEq, LEq, GEq, LT, GT, IsIn, Empty, ExternalPredicateByExtesion]

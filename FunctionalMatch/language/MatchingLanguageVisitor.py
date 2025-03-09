@@ -64,6 +64,11 @@ class MatchingLanguageVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by MatchingLanguageParser#p_call.
+    def visitP_call(self, ctx:MatchingLanguageParser.P_callContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by MatchingLanguageParser#p_var.
     def visitP_var(self, ctx:MatchingLanguageParser.P_varContext):
         return self.visitChildren(ctx)

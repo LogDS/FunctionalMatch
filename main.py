@@ -7,6 +7,7 @@ from typing import Optional
 from FunctionalMatch.PropositionalLogic import *
 from FunctionalMatch.example.Node import Node
 from FunctionalMatch.example.parmenides.Formulae import formula_from_dict, FUnaryPredicate, FVariable, FBinaryPredicate
+from FunctionalMatch.example.parmenides.knowledge_expansion import knowledge_expansion
 from FunctionalMatch.language.LanguageMainPoint import parse_query
 from FunctionalMatch.utils import ObjDepthDeterminer
 
@@ -47,6 +48,7 @@ def tst_query():
     city_center = FVariable("city center", "Noun", None, None, 1)
     adj1 = FVariable("busy", "JJ", None, None, 1)
     datum2 = FBinaryPredicate("have", city_center, adj1, -1, frozenset())
+    datum3 = FBinaryPredicate("have", city_center, city_center, -1, frozenset())
     datum = FUnaryPredicate("flow", traffic, 1.0, frozenset({"ciao": "giacomo"}.items()))
     # l1 = Node.leaf(1)
     # l2 = Node.leaf(2)
@@ -55,9 +57,12 @@ def tst_query():
     # datum = Node(5, s1, l1)
     # result = ObjDepthDeterminer.get_depth_dictionary(datum)
 
-    for query in queries:
-        result = query([datum, datum2])
-        print(result)
+    print(knowledge_expansion(datum, queries))
+    print(knowledge_expansion(datum2, queries))
+    print(knowledge_expansion(datum3, queries))
+    # for query in queries:
+    #     result = query([datum, datum2, datum3])
+    #     print(result)
 
     ## STOP PARMENIDES
     ParmenidesSingleton.stop()

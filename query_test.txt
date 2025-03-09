@@ -3,23 +3,45 @@ import "example_call" in-module "FunctionalMatch.example.Node" // Determining wh
 import Node           in-module "FunctionalMatch.example.Node" // Determining where the class is declared
 import "adjectivalForm" in-module "FunctionalMatch.example.parmenides.queries"
 import "partOf" in-module "FunctionalMatch.example.parmenides.queries"
+import "isA" in-module "FunctionalMatch.example.parmenides.queries"
+import "isOfType" in-module "FunctionalMatch.example.parmenides.queries"
+import "getOutgoingNodes" in-module "FunctionalMatch.example.parmenides.queries"
 import "addAdjective" in-module "FunctionalMatch.example.parmenides.queries"
 import FBinaryPredicate in-module "FunctionalMatch.example.parmenides.Formulae"
 import FUnaryPredicate in-module "FunctionalMatch.example.parmenides.Formulae"
 import FVariable in-module "FunctionalMatch.example.parmenides.Formulae"
 
-// query #1
+// query #1: If x has y and x is part of z, then also z has y
 nested match FBinaryPredicate ( "have", var(src), ( FVariable (_, "JJ",_,_,_,_) ) , _ , _ )
        replace var(x) with  jsonpath "$0:$.src.name"
-       extend-with "partOf" with variable : "x" result : "f"
+       extend-with "getOutgoingNodes" with variable : "x" result : "f" rel : "partOf"
        as deep rewrite jsonpath "$0:$.src.name" to var(f)
        ;
 
+// query #2
+nested match FBinaryPredicate ( "have", var(src), ( FVariable (_, "JJ",_,_,_,_) ) , _ , _ )
+       replace var(x) with  jsonpath "$0:$.src.name"
+       extend-with "getOutgoingNodes" with variable : "x" result : "f" rel : "isA"
+       as deep rewrite jsonpath "$0:$.src.name" to var(f)
+       ;
 
+// query #3: If x has a property y which is an adjective, then x exists with such a property
+nested match   FBinaryPredicate ( "have", var(src), var(dst) , var(score), var(props) )
+       replace var(x) with  jsonpath "$0:$.dst.name"
+       where call "isOfType" with variable : "x" type : "Adjective"
+       as      FUnaryPredicate ( "be" ,  ( "addAdjective" ( var(src) ) with adjective : var(x) ) , var(score), var(props) )
+       ;
+
+// query #4: If x has a property y and y is equivalent to z, then x has also z
+nested match   FBinaryPredicate ( "have", var(src), var(dst) , var(score), var(props) )
+       replace var(x) with  jsonpath "$0:$.dst.name"
+       extend-with "getOutgoingNodes" with variable : "x"   result : "z"   rel : "eqTo"
+       as deep rewrite jsonpath "$0:$.dst.name" to var(z)
+       ;
 
 // query invent 88-89
 nested match FUnaryPredicate (   var(x) , var(arg) ,  var(score), var(props) )
-       extend-with "adjectivalForm" with variable : "x" result : "f"
+       extend-with "getOutgoingNodes" with variable : "x" result : "f" rel: "adjectivalForm"
        as   FUnaryPredicate ( "be" ,  ( "addAdjective" ( var(arg) ) with adjective : var(f) ) , var(score), var(props) )
 
 
