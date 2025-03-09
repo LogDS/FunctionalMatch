@@ -40,6 +40,7 @@ object: ALPHANAME LPAR ((object ',')+ object)? RPAR                  #actual_obj
       | STRING '(' object ')' (WITH funarg+)?                         #actual_unary_function_with_args
       |  IGNORE                                                                                   #ignoring_argument
       | '(' object ')'   #par
+      | STRING                                                        #actual_string
       ;
 jpath : JSONPATH STRING;
 variable: 'var' LPAR ALPHANAME RPAR ;

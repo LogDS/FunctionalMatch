@@ -251,6 +251,15 @@ class MatchingLanguageListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by MatchingLanguageParser#actual_string.
+    def enterActual_string(self, ctx:MatchingLanguageParser.Actual_stringContext):
+        pass
+
+    # Exit a parse tree produced by MatchingLanguageParser#actual_string.
+    def exitActual_string(self, ctx:MatchingLanguageParser.Actual_stringContext):
+        pass
+
+
     # Enter a parse tree produced by MatchingLanguageParser#jpath.
     def enterJpath(self, ctx:MatchingLanguageParser.JpathContext):
         pass

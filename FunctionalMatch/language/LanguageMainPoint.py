@@ -27,6 +27,11 @@ class MatchingLanguageVisitor2(MatchingLanguageVisitor):
         self.function_import = dict()
         self.class_import = dict()
 
+    def visitActual_string(self, ctx: MatchingLanguageParser.Actual_stringContext):
+        if (ctx is None):
+            raise RuntimeError("ERROR MATCHING actual string")
+        return json.loads(ctx.STRING().getText())
+
     def visitPar(self, ctx: MatchingLanguageParser.ParContext):
         return self.visit(ctx.object_())
 
@@ -298,7 +303,7 @@ class MatchingLanguageVisitor2(MatchingLanguageVisitor):
         for key, value in zip(ctx.STRING(), ctx.object_()):
             key = json.loads(key.getText())
             d[key] = self.visit(value)
-        return dacite.from_dict(func, d)
+        return dacite.from_dict(func, d, dacite.Config(check_types=False))
 
     
     # Visit a parse tree produced by MatchingLanguageParser#actual_variable.

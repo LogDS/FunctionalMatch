@@ -144,6 +144,11 @@ class MatchingLanguageVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by MatchingLanguageParser#actual_string.
+    def visitActual_string(self, ctx:MatchingLanguageParser.Actual_stringContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by MatchingLanguageParser#jpath.
     def visitJpath(self, ctx:MatchingLanguageParser.JpathContext):
         return self.visitChildren(ctx)
