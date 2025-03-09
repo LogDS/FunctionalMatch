@@ -7,8 +7,8 @@ import_statement: IMPORT fun=STRING OVERMODULE module=STRING #function_import
                 ;
 
 rule: NESTED? MATCHING query=match_multiobj
-       (EXTEND (extension ',')* extension )?
        (REPLACE (replacement ',')* replacement)?
+       (EXTEND (extension ',')* extension )?
        (WHERE prop)?
        AS (rewriting=object|variable|jpath|rewrite_list)
       ;
@@ -47,13 +47,17 @@ variable: 'var' LPAR ALPHANAME RPAR ;
 rewrite_list: (SHALLOW|DEEP) REWRITE (rewrite ',')* rewrite;
 
 funarg:      ALPHANAME ':' (variable|(PYTHON? STRING));
-replacement: variable           WITH as=object|variable|jpath;
-rewrite:     repl=variable|jpath   AS as=object|variable|jpath;
+replacement: variable           WITH as;
+rewrite:     repl   TO as;
+
+as: jpath|object|variable;
+repl : variable|jpath;
 
 IMPORT: 'import';
 SHALLOW: 'shallow';
 DEEP: 'deep';
 AS: 'as';
+TO: 'to';
 VAR: 'var';
 MATCHING: 'match';
 NESTED: 'nested';

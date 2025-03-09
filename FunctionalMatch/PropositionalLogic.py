@@ -8,19 +8,44 @@ __email__ = "bergamigiacomo@gmail.com"
 __status__ = "Production"
 
 from collections import defaultdict
-from dataclasses import dataclass, is_dataclass, asdict
+from dataclasses import dataclass, is_dataclass, asdict, fields
 from typing import Union
 
 import dacite
 
 from FunctionalMatch.utils import FrozenDict
 
+def navigate_dataclass(obj, jsonpath_expr):
+    from jsonpath_ng import Root, Child, Fields, Index
+    if isinstance(jsonpath_expr, Root):
+        return obj
+    if isinstance(jsonpath_expr, Child):
+        return navigate_dataclass(navigate_dataclass(obj, jsonpath_expr.left), jsonpath_expr.right)
+    if isinstance(jsonpath_expr, Fields):
+        L = []
+        allFields = False
+        for field in jsonpath_expr.fields:
+            if field == "*":
+                allFields = True
+                L.extend([getattr(obj, field.name) for field in  fields(obj)])
+            else:
+                assert hasattr(obj, field)
+                L.append(getattr(obj, field))
+        if (not allFields) and len(L) == 1:
+            return L[0]
+        else:
+            return L
+    elif isinstance(jsonpath_expr, Index):
+        return obj[jsonpath_expr.index]
 
 def jpath_interpret(obj, path):
     from jsonpath_ng import jsonpath, parse
     jsonpath_expr = parse(path)
     L = [match.value for match in jsonpath_expr.find(asdict(obj))]
     assert len(L)==1
+    L0_type = type(navigate_dataclass(obj, jsonpath_expr))
+    if is_dataclass(L0_type):
+        return dacite.from_dict(L0_type, L[0])
     return L[0]
 
 def jpath_update(obj, path, value):
@@ -28,7 +53,11 @@ def jpath_update(obj, path, value):
     jsonpath_expr = parse(path)
     name_object = type(obj)
     result_dct = jsonpath_expr.update(asdict(obj), value)
-    result_obj = dacite.from_dict(name_object, result_dct)
+    if name_object != type(result_dct):
+        assert isinstance(result_dct, dict)
+        result_obj = dacite.from_dict(name_object, result_dct)
+    else:
+        result_obj = result_dct
     return result_obj
 
 def var_interpret(obj, kwargs:dict|FrozenDict, keepList=False):

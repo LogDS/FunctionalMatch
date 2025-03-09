@@ -63,7 +63,7 @@ class Query:
                 relevant_paths = set()
                 for match_memo in grouped_results[j]:
                     dollar_i = match_memo.query_id
-                    pi = match_memo.jsonpath
+                    pi = match_memo.json_path
                     relevant_paths.add(pi)
                 from FunctionalMatch.PropositionalLogic import jpath_interpret
                 orig[j] = {path: jpath_interpret(obj[j], path) for path in relevant_paths }
@@ -75,7 +75,7 @@ class Query:
                 if not isinstance(dct, FrozenDict):
                     assert isinstance(dct, dict)
                     dct = FrozenDict.from_dictionary(dct)
-                dct = rewrite_as(dct, self.as_)
+                dct = rewrite_as(dct, self.as_.replacement)
                 rewritten.append(dct)
 
             ## Now, I am updating each object j, recursively, according to the dictionary entry.
@@ -103,10 +103,13 @@ class Query:
                         from FunctionalMatch import instantiate
                         dollar_i_obj = evaluate_structural_function(instantiate(self.select.query[action.query_id], dct))
                     curr_obj = jpath_update(curr_obj, action.json_path, dollar_i_obj)
+                results.append(curr_obj)
         else:
             for dct, match_preserve_info  in outcome_list:
-                result = evaluate_structural_function(self.as_(dct))
-                if result is not None:
-                    results.append(result.obj)
+                result2 = self.as_(dct)
+                if result2 is not None:
+                    result = evaluate_structural_function(result2.obj)
+                    if result is not None:
+                        results.append(result)
         return True, results
 

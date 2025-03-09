@@ -314,5 +314,23 @@ class MatchingLanguageListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by MatchingLanguageParser#as.
+    def enterAs(self, ctx:MatchingLanguageParser.AsContext):
+        pass
+
+    # Exit a parse tree produced by MatchingLanguageParser#as.
+    def exitAs(self, ctx:MatchingLanguageParser.AsContext):
+        pass
+
+
+    # Enter a parse tree produced by MatchingLanguageParser#repl.
+    def enterRepl(self, ctx:MatchingLanguageParser.ReplContext):
+        pass
+
+    # Exit a parse tree produced by MatchingLanguageParser#repl.
+    def exitRepl(self, ctx:MatchingLanguageParser.ReplContext):
+        pass
+
+
 
 del MatchingLanguageParser

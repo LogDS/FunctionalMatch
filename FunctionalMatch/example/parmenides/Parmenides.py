@@ -52,6 +52,39 @@ class CasusHappening(Enum):
     INSTANTIATION_IMPLICATION = 10
     MISSING_1ST_IMPLICATION = 12
 
+
+class ParmenidesSingleton(object):
+    _instance = None
+
+    def __init__(self):
+        raise RuntimeError('Call instance() instead')
+
+    @classmethod
+    def instance(cls):
+        if cls._instance is None:
+            print('Creating new instance')
+            cls._instance = cls.__new__(cls)
+            cls._instance.parmenides = None
+        return cls._instance
+
+    @staticmethod
+    def init(cache_path, user, password, hostame, port, onStorage, path):
+        if ParmenidesSingleton._instance.parmenides is None:
+            ParmenidesSingleton._instance.parmenides = Parmenides(cache_path, user, password, hostame, port, onStorage)
+            ParmenidesSingleton._instance.parmenides.start(path)
+
+    @staticmethod
+    def stop():
+        if ParmenidesSingleton._instance is not None and ParmenidesSingleton._instance.parmenides is not None:
+            ParmenidesSingleton._instance.parmenides.stop()
+            ParmenidesSingleton._instance.parmenides = None
+        ParmenidesSingleton._instance = None
+
+    @staticmethod
+    def get() -> 'Parmenides':
+        return ParmenidesSingleton._instance.parmenides
+
+
 class Parmenides(RDFGraph):
 
     def __init__(self, cache_path, user, password, hostame, port, onStorage =True):
@@ -265,46 +298,54 @@ class Parmenides(RDFGraph):
 
 
         ## Prepositions
-        from FunctionalMatch.example.parmenides.Prepositions import Preposition
-        query = """
-        SELECT *
-        WHERE {
-            { ?src a <https://logds.github.io/parmenides#Preposition>. }
-            UNION
-        { ?s a ?t. ?t rdfs:subClassOf  <https://logds.github.io/parmenides#Preposition>. }
-         ?src rdfs:label ?src_label.
-        }"""
-        result = defaultdict(dict)
-        for d in self._run_custom_sparql_query(query):
-            rel = str(d.get("t", ""))[len(self.namespace):]
-            # rel = str(d.get("rel", ""))[len(Parmenides.parmenides_ns):]
-            label = str(d["src_label"])
-            local = result[label]
-            # print(label)
-            result[label] = Preposition.update_with_label(local, rel)
-        query = """
-                SELECT *
-                WHERE {
-                 ?src ?prop ?value.
-                 ?prop a owl:ObjectProperty.
-                 ?src rdfs:label ?label.
-                }"""
-        for k in result.keys():
-            binding = {"label": Literal(k, datatype=XSD.string)}
-            for d in self._run_custom_sparql_query(query, bindings=binding):
-                rel = str(d.get("prop", ""))[len(self.namespace):]
-                if isinstance(d["value"], Literal):
-                    # print(rel)
-                    result[k][rel] = d["value"].value
-        self.prepositions = dict()
-        for k, v in result.items():
-            v["name"] = k
-            self.prepositions[k] = dacite.from_dict(Preposition, v)
-        ## Prepositions: end
-
-
+        self.prepositions = None
+        prep_pickle = os.path.join(self.cache_path, "prepositions.pickle")
+        if os.path.exists(prep_pickle):
+            with open(prep_pickle, "rb") as f:
+                self.prepositions = pickle.load(f)
+        if self.prepositions is None or len(self.prepositions) == 0:
+            from FunctionalMatch.example.parmenides.Prepositions import Preposition
+            query = """
+            SELECT *
+            WHERE {
+                { ?src a <https://logds.github.io/parmenides#Preposition>. }
+                UNION
+            { ?s a ?t. ?t rdfs:subClassOf  <https://logds.github.io/parmenides#Preposition>. }
+             ?src rdfs:label ?src_label.
+            }"""
+            result = defaultdict(dict)
+            for d in self._run_custom_sparql_query(query):
+                rel = str(d.get("t", ""))[len(self.namespace):]
+                # rel = str(d.get("rel", ""))[len(Parmenides.parmenides_ns):]
+                label = str(d["src_label"])
+                local = result[label]
+                # print(label)
+                result[label] = Preposition.update_with_label(local, rel)
+            query = """
+                    SELECT *
+                    WHERE {
+                     ?src ?prop ?value.
+                     ?prop a owl:ObjectProperty.
+                     ?src rdfs:label ?label.
+                    }"""
+            for k in result.keys():
+                binding = {"label": Literal(k, datatype=XSD.string)}
+                for d in self._run_custom_sparql_query(query, bindings=binding):
+                    rel = str(d.get("prop", ""))[len(self.namespace):]
+                    if isinstance(d["value"], Literal):
+                        # print(rel)
+                        result[k][rel] = d["value"].value
+            self.prepositions = dict()
+            for k, v in result.items():
+                v["name"] = k
+                self.prepositions[k] = dacite.from_dict(Preposition, v)
+            ## Prepositions: end
+            with open(prep_pickle, "wb") as f:
+                pickle.dump(self.prepositions, f, protocol=pickle.HIGHEST_PROTOCOL)
         self.loaded = True
         return True
+
+
 
     def most_specific_type(self, types):
         types = list(map(lambda x: str(x).lower(), types))

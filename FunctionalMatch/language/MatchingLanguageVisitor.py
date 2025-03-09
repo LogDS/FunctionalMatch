@@ -179,5 +179,15 @@ class MatchingLanguageVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by MatchingLanguageParser#as.
+    def visitAs(self, ctx:MatchingLanguageParser.AsContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by MatchingLanguageParser#repl.
+    def visitRepl(self, ctx:MatchingLanguageParser.ReplContext):
+        return self.visitChildren(ctx)
+
+
 
 del MatchingLanguageParser

@@ -141,8 +141,8 @@ class MatchingLanguageVisitor2(MatchingLanguageVisitor):
     def visitRewrite(self, ctx: MatchingLanguageParser.RewriteContext):
         if (ctx is None):
             raise RuntimeError("ERROR MATCHING rewriting object")
-        premise = self.visit(ctx.repl)
-        conseq = self.visit(ctx.as_)
+        premise = self.visit(ctx.repl())
+        conseq = self.visit(ctx.as_())
         return (premise, conseq)
 
     # Visit a parse tree produced by MatchingLanguageParser#p_not.
@@ -348,7 +348,7 @@ class MatchingLanguageVisitor2(MatchingLanguageVisitor):
         if (ctx is None):
             raise RuntimeError("ERROR MATCHING replacement")
         premise = ctx.variable().ALPHANAME().getText()
-        conseq = self.visit(ctx.as_)
+        conseq = self.visit(ctx.as_())
         from FunctionalMatch.functions.structural_match import Variable
         if isinstance(conseq, Variable) or type(conseq).__name__ == "Variable":
             conseq = conseq.name

@@ -390,6 +390,13 @@ class RDFGraph(object):
                 k[edge_type[1:]] = str(d.get("edge_type"))[len(self.namespace):]
             yield k
 
+    def getOutgoingNodes(self, srcLabel, edgeType):
+        S = set()
+        for x in self.single_edge(srcLabel, edgeType, "^x"):
+            if x["@^hasResult"]:
+                S.add( x["x"])
+        return S
+
     def single_edge(self, src, edge_type, dst):
         m = re.match(r"(?P<main>[^\[]+)\[(?P<spec>[^\]]+)\]", src)
         if m:

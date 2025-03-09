@@ -44,7 +44,7 @@ class ExternalMatchByExtesion:
     def structural_map(self, f):
         extra_args = {f(k): f(v) for k, v in self.extra_args.items()} if self.extra_args is not None else None
         packed_call = f(self.packed_call) if self.packed_call is not None else None
-        return ExternalMatchByExtesion(self.function_name, self.module, extra_args, packed_call)
+        return ExternalMatchByExtesion(self.function_name, self.module, FrozenDict.from_dictionary(extra_args), packed_call)
 
     def callMe(self):
         return self(self.packed_call)
@@ -167,6 +167,12 @@ class Match:
         outcome_mapping = [{k[:k.find("@")]: MatchMemo(int(k[k.find("@")+1:k.find(":")]), k[k.find(":")+1:]) for k in out.keys() if k.startswith("$") and k.find("@")>0 and k.find(":")>0 and k.find("@")<k.find(":")} for out in outcome]
         outcome =         [{k[:k.find("@")] if k.startswith("$") and k.find("@")>0 and k.find(":")>0 and k.find("@")<k.find(":") else k: v for k,v in out.items()} for out in outcome]
 
+        if self.replacement is not None:
+            outcome = [self.replacement(obj) for obj in outcome]
+        # else:
+        #     return test, outcome
+
+
         if (self.extension is not None) and (
                 isinstance(self.extension , list) or isinstance(self.extension ,
                                                                               tuple)) and all(
@@ -208,11 +214,6 @@ class Match:
                 outcome_mapping = []
         else:
             test = len(outcome) > 0
-        if test:
-            if self.replacement is None:
-                return test, outcome
-            else:
-                outcome = [self.replacement(obj) for obj in outcome]
         return test, list(zip(outcome, outcome_mapping))
 
     def __call__(self, x):

@@ -10,12 +10,12 @@ __status__ = "Production"
 import copy
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Tuple, Dict, Union
+from typing import Tuple, Dict, Union, Optional
 
-class Formula:
 
-    def __str__(self):
-        return "Formula(?)"
+# class Formula:
+#     def __str__(self):
+#         return "Formula(?)"
 
 
 def print_proprieties(proprieties, cop=None):
@@ -37,16 +37,20 @@ def print_proprieties(proprieties, cop=None):
         return ""
 
 
+
 @dataclass(order=True, frozen=True, eq=True)
-class FVariable(Formula):
+class FVariable:
     name: str
     type: str
-    specification: str  # extra
-    cop: Formula
-    id: int
+    specification: Optional[str] = None  # extra
+    cop: Optional['Formula'] = None
+    id: int = -1
     properties: frozenset = field(default_factory=lambda: frozenset())
     meta: str = field(default_factory=lambda: "FVariable")
-    matched: bool = field(default_factory=lambda: False)
+    # matched: bool = field(default_factory=lambda: False)
+
+    def add_adjective(self, adj, type="JJ"):
+        return FVariable(self.name, self.type, self.specification, FVariable(adj, type, "", None, -1), self.id, self.properties, self.meta)
 
     def __str__(self):
         name = self.name
@@ -65,13 +69,13 @@ class FVariable(Formula):
 
 
 @dataclass(order=True, frozen=True, eq=True)
-class FUnaryPredicate(Formula):
+class FUnaryPredicate:
     rel: str
-    arg: Formula
+    arg: 'Formula'
     score: float
-    properties: frozenset
+    properties: frozenset = field(default_factory=lambda: frozenset())
     meta: str = field(default_factory=lambda: "FUnaryPredicate")
-    matched: bool = field(default_factory=lambda: False)
+    # matched: bool = field(default_factory=lambda: False)
 
     def __str__(self):
         name = self.rel
@@ -84,14 +88,14 @@ class FUnaryPredicate(Formula):
 
 
 @dataclass(order=True, frozen=True, eq=True)
-class FBinaryPredicate(Formula):
+class FBinaryPredicate:
     rel: str
-    src: Formula
-    dst: Formula
+    src: 'Formula'
+    dst: 'Formula'
     score: float
     properties: frozenset
     meta: str = field(default_factory=lambda: "FBinaryPredicate")
-    matched: bool = field(default_factory=lambda: False)
+    # matched: bool = field(default_factory=lambda: False)
 
     def __str__(self):
         name = self.rel
@@ -114,10 +118,10 @@ class FBinaryPredicate(Formula):
 
 
 @dataclass(order=True, frozen=True, eq=True)
-class FAnd(Formula):
-    args: Tuple[Formula]
+class FAnd:
+    args: Tuple['Formula']
     meta: str = field(default_factory=lambda: "FAnd")
-    matched: bool = field(default_factory=lambda: False)
+    # matched: bool = field(default_factory=lambda: False)
 
     def __str__(self):
         return "\\left(" + (" \\wedge ".join(map(str, self.args))) + "\\right)"
@@ -125,27 +129,33 @@ class FAnd(Formula):
 
 
 @dataclass(order=True, frozen=True, eq=True)
-class FOr(Formula):
-    args: Tuple[Formula]
+class FOr:
+    args: Tuple['Formula']
     meta: str = field(default_factory=lambda: "FOr")
-    matched: bool = field(default_factory=lambda: False)
+    # matched: bool = field(default_factory=lambda: False)
 
     def __str__(self):
         return "\\left(" + (" \\vee ".join(map(str, self.args))) + "\\right)"
 
-
-
-
-
 @dataclass(order=True, frozen=True, eq=True)
-class FNot(Formula):
-    arg: Formula
+class FNot:
+    arg: 'Formula'
     meta: str = field(default_factory=lambda: "FNot")
     matched: bool = field(default_factory=lambda: False)
 
     def __str__(self):
         return " \\neg \\left(" + str(self.arg) + "\\right)"
 
+Formula = Union[FOr, FAnd, FUnaryPredicate, FUnaryPredicate, FVariable, FNot]
+
+@dataclass(order=True, frozen=True, eq=True)
+class FNot:
+    arg: Formula
+    meta: str = field(default_factory=lambda: "FNot")
+    matched: bool = field(default_factory=lambda: False)
+
+    def __str__(self):
+        return " \\neg \\left(" + str(self.arg) + "\\right)"
 
 
 

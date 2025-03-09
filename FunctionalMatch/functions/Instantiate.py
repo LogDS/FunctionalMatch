@@ -34,11 +34,15 @@ def instantiate(query:object, kwargs:Union[dict,FrozenDict]):
     if type(query).__name__ == "Ignore":
         return None
     elif is_dataclass(query):
-        obj_inst = dict()
-        for field in fields(query):
-            from FunctionalMatch.Match import evaluate_structural_function
-            obj_inst[field.name] = evaluate_structural_function(instantiate(getattr(query, field.name), kwargs))
-        return from_dict(type(query), obj_inst)
+        from FunctionalMatch.Match import ExternalMatchByExtesion, evaluate_structural_function
+        if isinstance(query, ExternalMatchByExtesion) or type(query).__name__ == "ExternalMatchByExtesion":
+            return instantiate(query.structural_map(lambda x: instantiate(x, kwargs)).callMe(), kwargs)
+        else:
+            obj_inst = dict()
+            for field in fields(query):
+                from FunctionalMatch.Match import evaluate_structural_function
+                obj_inst[field.name] = evaluate_structural_function(instantiate(getattr(query, field.name), kwargs))
+            return from_dict(type(query), obj_inst)
     else:
         return query
 

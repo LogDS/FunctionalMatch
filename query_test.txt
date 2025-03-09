@@ -1,7 +1,33 @@
-import "example_ext" in-module "FunctionalMatch.example.Node" // Determining where the function is declared
+import "example_ext"  in-module "FunctionalMatch.example.Node" // Determining where the function is declared
 import "example_call" in-module "FunctionalMatch.example.Node" // Determining where the function is declared
-import Node          in-module "FunctionalMatch.example.Node" // Determining where the class is declared
+import Node           in-module "FunctionalMatch.example.Node" // Determining where the class is declared
+import "adjectivalForm" in-module "FunctionalMatch.example.parmenides.queries"
+import "partOf" in-module "FunctionalMatch.example.parmenides.queries"
+import "addAdjective" in-module "FunctionalMatch.example.parmenides.queries"
+import FBinaryPredicate in-module "FunctionalMatch.example.parmenides.Formulae"
+import FUnaryPredicate in-module "FunctionalMatch.example.parmenides.Formulae"
+import FVariable in-module "FunctionalMatch.example.parmenides.Formulae"
 
+// query #1
+nested match FBinaryPredicate ( "have", var(src), ( FVariable (_, "JJ",_,_,_,_) ) , _ , _ )
+       replace var(x) with  jsonpath "$0:$.src.name"
+       extend-with "partOf" with variable : "x" result : "f"
+       as deep rewrite jsonpath "$0:$.src.name" to var(f)
+       ;
+
+
+
+// query invent 88-89
+nested match FUnaryPredicate (   var(x) , var(arg) ,  var(score), var(props) )
+       extend-with "adjectivalForm" with variable : "x" result : "f"
+       as   FUnaryPredicate ( "be" ,  ( "addAdjective" ( var(arg) ) with adjective : var(f) ) , var(score), var(props) )
+
+
+;
+
+
+
+/*
 
 nested match Node(var(x), var(r), var(l))                       // Performing pattern matching with the node class and some arguments of interest
        extend-with "example_ext" with printer : "ciao"          // Passing the function some extra arguments with the with statement.
@@ -9,3 +35,5 @@ nested match Node(var(x), var(r), var(l))                       // Performing pa
        where (var(x) ⩽ (python "0")) || ((jsonpath "$0:$.left.val") = (python "0")) // Filtering the resulting rows according to somethihng
        as    Node(var(genoveffo), "example_call" ( var(r) ), var(y))               // Newly instantiating something
 ;
+
+*/
