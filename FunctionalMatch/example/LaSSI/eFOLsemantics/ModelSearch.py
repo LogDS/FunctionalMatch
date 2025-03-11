@@ -26,6 +26,9 @@ class ModelSearchBasis:
             else:
                 raise Exception("Unexpected expression: "+str(constituent))
 
+    def all(self):
+        return self.unary + self.binary
+
 
 
 class ModelSearch:

@@ -58,6 +58,12 @@ class TabularCWASemantics:
             pickle.dump(self.minimal_constituents, p, protocol=pickle.HIGHEST_PROTOCOL)
         self.ec = ExpandConstituents(self.cache_folder, self.minimal_constituents.getAllObjects())
 
+    def getImplExpansions(self, minimal_constituent_idx):
+        return self.ec.getImplExpansions(minimal_constituent_idx)
+
+    def getEqExpansions(self, minimal_constituent_idx):
+        return self.ec.getEqExpansions(minimal_constituent_idx)
+
     def __call__(self, i, j):
         return self.get_straightforward_id_similarity(self.sentence_to_id[i], self.sentence_to_id[j])
 
@@ -102,18 +108,71 @@ class TabularCWASemantics:
         # print(f"{i}~{j} := {total}")
         return total
 
-    def buildReport(self):
+    def buildReport(self, file):
         from bs4 import Tag
         from FunctionalMatch.example.parmenides.formula_utils import latex_formula_rendering
         html = Tag(name="html")
         body = Tag(name="body")
 
-        for i in enumerate(self.sentence_list):
-            sentence = self.sentence_list[i]
-            minimal_constituents = self.minimal_constituents[i]
+        p_ = Tag(name="h1")
+        p_.append("Constutents DB")
+        body.append(p_)
+        ol = Tag(name="ol")
+        constituents = self.minimal_constituents.getAllObjects()
+        for idx, x in enumerate(constituents):
+            li = Tag(name="li")
+            li["id"] = f"constituent{idx}"
+            li.append(latex_formula_rendering(x))
 
-            h1 = Tag(name="h1")
-            h1.append(f"Sentence #{i}")
+
+            pp = Tag(name="p")
+            pp.append("Eq Rewriting")
+            li.append(pp)
+
+            ool = Tag(name="ol")
+            for x in self.getEqExpansions(idx):
+                lli = Tag(name="li")
+                lli.append(latex_formula_rendering(x))
+                ool.append(lli)
+            li.append(ool)
+
+            pp = Tag(name="p")
+            pp.append("Impl Rewriting")
+            li.append(pp)
+
+            ool = Tag(name="ol")
+            for x in self.getImplExpansions(idx):
+                lli = Tag(name="li")
+                lli.append(latex_formula_rendering(x))
+                ool.append(lli)
+            li.append(ool)
+
+            ol.append(li)
+        body.append(ol)
+
+        p_ = Tag(name="h1")
+        p_.append("Sentences DB")
+        body.append(p_)
+        uul = Tag(name="ul")
+        body.append(uul)
+
+        for i, sentence in enumerate(self.sentence_list):
+            minimal_constituents = self.minimal_constituent_dict[i]
+            ref = f"Sentence{i}"
+            Sentence = f"Sentence #{i}"
+
+            lli = Tag(name="li")
+            lla = Tag(name="a")
+            lla["href"] = f"#{ref}"
+            lla.append(Sentence)
+            lli.append(lla)
+            uul.append(lli)
+
+            h1 = Tag(name="h2")
+            a = Tag(name="a")
+            h1["id"] = ref
+            a.append(Sentence)
+            h1.append(a)
             body.append(h1)
 
             p1 = Tag(name="p")
@@ -124,14 +183,22 @@ class TabularCWASemantics:
             p2 = Tag(name="p")
             p2.append("Minimal Constituents:")
             body.append(p2)
-
-            ul = Tag(name="ul")
-            for x in minimal_constituents:
+            ol = Tag(name="ul")
+            for x_idx in minimal_constituents:
                 li = Tag(name="li")
-                li.append(latex_formula_rendering(x))
-                ul.append(li)
-            body.append(ul)
+                ali = Tag(name="a")
+                ali["href"] = f"#constituent{x_idx}"
+                ali.append(str(x_idx))
+                ali.append(latex_formula_rendering(constituents[x_idx]))
+                li.append(ali)
+                ol.append(li)
+
+
+            body.append(ol)
         html.append(body)
         html.decode()
+
+        with open(file, "w") as f:
+            f.write(str(html))
 
 

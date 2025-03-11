@@ -349,14 +349,14 @@ def instantiate_rules(constituents, expansion_dictionary, final_constituents, is
 
 
 class ExpandConstituents:
-    def __init__(self, cache_folder, sentences):
+    def __init__(self, cache_folder, constituents):
         """
         This class provides the expansion for each of the sentences, as well as caching the direction of the implication for each of the formulae
         """
         print("Setting up the rule expander...")
         # self.kb = kb
 
-        self.sentences = list(sentences)
+        self.constituents = list(constituents)
         _ied = os.path.join(cache_folder, "_ied.pickle")
         _ic = os.path.join(cache_folder, "_ic.pickle")
         _eed = os.path.join(cache_folder, "_eed.pickle")
@@ -378,7 +378,7 @@ class ExpandConstituents:
             self.eq_constituents = set()
 
             if not all(map(lambda x: isinstance(x, FBinaryPredicate) or isinstance(x, FUnaryPredicate),
-                           self.sentences)):
+                           self.constituents)):
                 raise ValueError(
                     "Error: all the rules within the set of rules must represent Predicates to be assessed, be them unary or binary")
 
@@ -386,10 +386,10 @@ class ExpandConstituents:
 
             print("Expanding the constituents...")
             # self.outcome_implication_dictionary =
-            instantiate_rules(self.sentences, self.impl_expansion_dictionary, self.impl_constituents,
+            instantiate_rules(self.constituents, self.impl_expansion_dictionary, self.impl_constituents,
                               True)
             # self.outcome_eq_dictionary =
-            instantiate_rules(self.sentences, self.eq_expansion_dictionary, self.eq_constituents,
+            instantiate_rules(self.constituents, self.eq_expansion_dictionary, self.eq_constituents,
                               False)
             with open(_ied, "wb") as f:
                 pickle.dump(self.impl_expansion_dictionary, f, protocol=pickle.HIGHEST_PROTOCOL)
@@ -405,16 +405,21 @@ class ExpandConstituents:
         self.lhsOrigDict = dict()
         self.rhsOrigDict = dict()
         print("Splitting across unary and binary constituents for each sentence...")
-        for i, sentence in enumerate(self.sentences):
+        for i, sentence in enumerate(self.constituents):
             self.lhsOrigDict[i] = ModelSearchBasis(sentence, self.impl_expansion_dictionary[sentence])
             self.rhsOrigDict[i] = ModelSearchBasis(sentence, self.eq_expansion_dictionary[sentence])
 
+    def getImplExpansions(self, idx):
+        return self.lhsOrigDict[idx].all() if idx in self.lhsOrigDict else []
+
+    def getEqExpansions(self, idx):
+        return self.rhsOrigDict[idx].all() if idx in self.lhsOrigDict else []
 
     def determine(self, i: int, j: int):
         if (i == j):
             self.result_cache[(i, j)] = PairwiseCases.Equivalent
-        assert i < len(self.sentences)
-        assert j < len(self.sentences)
+        assert i < len(self.constituents)
+        assert j < len(self.constituents)
         if (i, j) in self.result_cache:
             return self.result_cache[(i, j)]
         val = PairwiseCases.NonImplying
