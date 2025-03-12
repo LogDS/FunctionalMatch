@@ -29,8 +29,8 @@ def navigate_dataclass(obj, jsonpath_expr):
                 allFields = True
                 L.extend([getattr(obj, field.name) for field in  fields(obj)])
             else:
-                assert hasattr(obj, field)
-                L.append(getattr(obj, field))
+                if hasattr(obj, field):
+                    L.append(getattr(obj, field))
         if (not allFields) and len(L) == 1:
             return L[0]
         else:
@@ -62,7 +62,7 @@ def jpath_update(obj, path, value):
         result_obj = result_dct
     return result_obj
 
-def var_interpret(obj, kwargs:dict|FrozenDict, keepList=False):
+def var_interpret(obj, kwargs:dict|FrozenDict):
     from FunctionalMatch import JSONPath
     from FunctionalMatch.functions.structural_match import Variable
     from jsonpath_ng import jsonpath, parse
@@ -83,7 +83,8 @@ def var_interpret(obj, kwargs:dict|FrozenDict, keepList=False):
         if pathing_object is not None and is_dataclass(pathing_object):
                 jsonpath_expr = parse(pathing_over_expr)
                 L = [match.value for match in jsonpath_expr.find(asdict(pathing_object))]
-                return L[0] if (not keepList) and (len(L) == 1) else L
+                return navigate_dataclass(pathing_object, jsonpath_expr)
+                # return L[0] if (not keepList) and (len(L) == 1) else L
         else:
             return None
     else:

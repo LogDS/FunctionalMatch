@@ -84,8 +84,8 @@ class FVariable:
             name = "?"
         else:
             name = "\\textsf{" + name + "}"
-        if self.specification is not None:
-            name += (" [\\textup{of}] " + str(self.specification))
+        if (self.specification is not None) and len(str(self.specification))>0:
+            name += (" [\\textup{of}] \\textit{" + str(self.specification)) + "}"
             name = "\\left[" + name + "\\right]^{\\texttt{" + str(self.id) + "}}"
         else:
             name = "{" + name + "}^{\\texttt{" + str(self.id) + "}}"

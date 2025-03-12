@@ -58,13 +58,16 @@ def tst_query():
     from FunctionalMatch.example.LaSSI.eFOLsemantics.TBoxReasoning import TBoxReasoningSingleton
     print("Init TBox Reasoning Rules")
     TBoxReasoningSingleton.instance()
-    TBoxReasoningSingleton.init("/home/giacomo/PyCharmProjects/FunctionalMatch/query_impl.txt",
-                                "/home/giacomo/PyCharmProjects/FunctionalMatch/query_eq.txt")
+    TBoxReasoningSingleton.init("/home/giacomo/PyCharmProjects/FunctionalMatch/query_test.txt",
+                                "/home/giacomo/PyCharmProjects/FunctionalMatch/query_test.txt")
+    # TBoxReasoningSingleton.init("/home/giacomo/PyCharmProjects/FunctionalMatch/query_impl.txt",
+    #                             "/home/giacomo/PyCharmProjects/FunctionalMatch/query_eq.txt")
 
     print("Initializing all the data and performing the expansion")
     cwa = TabularCWASemantics(sentences, "/home/giacomo/PyCharmProjects/FunctionalMatch/data/cache")
 
-    cwa.buildReport("/home/giacomo/PyCharmProjects/FunctionalMatch/report.html")
+    print("Building Report!")
+    cwa.buildReport("/home/giacomo/PyCharmProjects/FunctionalMatch/report_debug.html")
 
     # l1 = Node.leaf(1)
     # l2 = Node.leaf(2)

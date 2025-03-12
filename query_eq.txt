@@ -51,7 +51,7 @@ nested match        FUnaryPredicate ( "be",  var(arg) , var(score), var(props)  
                var(orig) with jsonpath "$0:$"
        extend-with  "getOutgoingNodes" with variable : "x"   result : "z"   rel : "neqTo"
        where call "nonEmptyMatch" with variable : "x"
-       as deep rewrite jsonpath "$0:$.arg.cop.name" to var(z),
+       as deep rewrite jsonpath "orig:$.arg.cop.name" to var(z),
                        jsonpath "$0:$"             to FNot ( var(orig) )
        ;
 
