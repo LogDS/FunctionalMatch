@@ -84,7 +84,7 @@ def evaluate_structural_function(obj):
             d = dict()
             for field in fields(obj):
                 d[field.name] = evaluate_structural_function(getattr(obj, field.name))
-            return dacite.from_dict(type(obj), d)
+            return dacite.from_dict(type(obj), d, dacite.Config(check_types=False))
     else:
         return obj
 
@@ -136,17 +136,7 @@ class Match:
 
     def structural_match(self, query, target, number):
         outcome = self.structural_match_single_query(query, target, number)
-        if self.where is not None:
-            from FunctionalMatch.functions.Where import where
-            from operator import itemgetter
-            test, idxs = where(outcome, self.where)
-            if len(outcome)>0 and len(idxs)>0:
-                outcome = [outcome[i] for i in idxs]
-            else:
-                outcome = []
-        else:
-            test = len(outcome) > 0
-        return test, outcome
+        return len(outcome) > 0, outcome
 
     def structural_match_main_loop(self, targets):
         results = dict()
@@ -173,48 +163,55 @@ class Match:
         outcome_mapping = [{k[:k.find("@")]: MatchMemo(int(k[k.find("@")+1:k.find(":")]), k[k.find(":")+1:]) for k in out.keys() if k.startswith("$") and k.find("@")>0 and k.find(":")>0 and k.find("@")<k.find(":")} for out in outcome]
         outcome =         [{k[:k.find("@")] if k.startswith("$") and k.find("@")>0 and k.find(":")>0 and k.find("@")<k.find(":") else k: v for k,v in out.items()} for out in outcome]
 
+        assert len(outcome) == len(outcome_mapping)
         if self.replacement is not None:
             outcome = [self.replacement(obj) for obj in outcome]
         # else:
         #     return test, outcome
 
-
+        outcome_to_outcome_mapping = dict()
         if (self.extension is not None) and (
                 isinstance(self.extension , list) or isinstance(self.extension ,
                                                                               tuple)) and all(
                 map(callable, self.extension )) and len(self.extension ) > 0:
             if self.extension is not None and len(self.extension) > 0:
                 tmp = []
-                Q = [(x,0) for x in outcome]
+                Q = [(idx,current,0) for idx, current in enumerate(outcome)]
                 while len(Q) > 0:
-                    curr, idx = Q.pop()
-                    fun = self.extension[idx]
+                    outcome_idx, curr, ext_id = Q.pop()
+                    fun = self.extension[ext_id]
                     curr = curr if isinstance(curr, FrozenDict) else FrozenDict.from_dictionary(curr)
                     result = fun(curr)
-                    if idx+1 < len(self.extension):
+                    if ext_id+1 < len(self.extension):
                         if isinstance(result, list):
                             for x in result:
-                                Q.append((x, idx+1))
+                                Q.append((outcome_idx, x, ext_id+1))
                         else:
-                            Q.append((result, idx+1 ))
+                            Q.append((outcome_idx, result, ext_id+1 ))
                     else:
                         if isinstance(result, list):
                             for x in result:
+                                outcome_to_outcome_mapping[len(tmp)] = outcome_idx
                                 tmp.append(x)
                         else:
+                            outcome_to_outcome_mapping[len(tmp)] = outcome_idx
                             tmp.append(result)
                 # for x in outcome:
                 #     for extension_match_function in self.extension:
                 #         x = extension_match_function(x if isinstance(x, FrozenDict) else FrozenDict.from_dictionary(x))
                 #     tmp.append(x)
                 outcome = tmp
+            else:
+                outcome_to_outcome_mapping = {i:i for i in range(len(outcome_mapping))}
+        else:
+            outcome_to_outcome_mapping = {i: i for i in range(len(outcome_mapping))}
         if self.where is not None:
             from FunctionalMatch.functions.Where import where
             from operator import itemgetter
             test, idxs = where(outcome, self.where)
             if len(outcome)>0 and len(idxs)>0:
                 outcome = [outcome[i] for i in idxs]
-                outcome_mapping = [outcome_mapping[i] for i in idxs]
+                outcome_mapping = [outcome_mapping[outcome_to_outcome_mapping[i]] for i in idxs]
             else:
                 outcome = []
                 outcome_mapping = []

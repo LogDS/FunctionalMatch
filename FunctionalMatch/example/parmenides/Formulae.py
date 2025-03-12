@@ -12,6 +12,8 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Tuple, Dict, Union, Optional
 
+from FunctionalMatch.functions.structural_match import Ignore
+
 
 # class Formula:
 #     def __str__(self):
@@ -36,22 +38,46 @@ def print_proprieties(proprieties, cop=None):
     else:
         return ""
 
-
+def update_property(prop, key, value):
+    d = {k: v for k, v in prop} if prop is not None else {}
+    if key in d:
+        assert not isinstance(d[key], list)
+        if isinstance(d[key], tuple):
+            d[key] = d[key] + (value,)
+        else:
+            d[key] = (d[key], value)
+    else:
+        d[key] = (value,)
+    return frozenset(d.items())
 
 @dataclass(order=True, frozen=True, eq=True)
 class FVariable:
     name: str
     type: str
-    specification: Optional[str] = None  # extra
+    specification: Optional[str|Ignore] = None  # extra
     cop: Optional['Formula'] = None
-    id: int = -1
+    id: Optional[int] = None
     properties: frozenset = field(default_factory=lambda: frozenset())
     meta: str = field(default_factory=lambda: "FVariable")
     # matched: bool = field(default_factory=lambda: False)
 
     def add_adjective(self, adj, type="JJ"):
-        return FVariable(self.name, self.type, self.specification, FVariable(adj, type, "", None, -1), self.id, self.properties, self.meta)
+        return FVariable(self.name, self.type, self.specification, FVariable(adj, type, "", None, -1), self.id, self.properties)
 
+    def add_property(self, key, value):
+        # d = {k:v for k,v in self.properties} if self.properties is not None else {}
+        # if key in d:
+        #     assert not isinstance(d[key], list)
+        #     if isinstance(d[key], tuple):
+        #         d[key] = d[key] + (value,)
+        #     else:
+        #         d[key] = (d[key], value)
+        # else:
+        #     d[key] = (value,)
+        return FVariable(self.name, self.type, self.specification, self.cop, self.id, update_property(self.properties, key, value))
+
+    def __repr__(self):
+        return self.__str__()
     def __str__(self):
         name = self.name
         if name is None:
@@ -65,7 +91,8 @@ class FVariable:
             name = "{" + name + "}^{\\texttt{" + str(self.id) + "}}"
         return name + print_proprieties(self.properties, self.cop)
 
-
+    def add_specification(self, value):
+        return FVariable(self.name, self.type, value, self.cop, self.id, self.properties)
 
 
 @dataclass(order=True, frozen=True, eq=True)
@@ -76,6 +103,21 @@ class FUnaryPredicate:
     properties: frozenset = field(default_factory=lambda: frozenset())
     meta: str = field(default_factory=lambda: "FUnaryPredicate")
     # matched: bool = field(default_factory=lambda: False)
+
+    def add_property(self, key, value):
+        # d = {k:v for k,v in self.properties} if self.properties is not None else {}
+        # if key in d:
+        #     assert not isinstance(d[key], list)
+        #     if isinstance(d[key], tuple):
+        #         d[key] = d[key] + (value,)
+        #     else:
+        #         d[key] = (d[key], value)
+        # else:
+        #     d[key] = (value,)
+        return FUnaryPredicate(self.rel, self.arg, self.score, update_property(self.properties, key, value))
+
+    def __repr__(self):
+        return self.__str__()
 
     def __str__(self):
         name = self.rel
@@ -96,6 +138,21 @@ class FBinaryPredicate:
     properties: frozenset
     meta: str = field(default_factory=lambda: "FBinaryPredicate")
     # matched: bool = field(default_factory=lambda: False)
+
+    def add_property(self, key, value):
+        # d = {k:v for k,v in self.properties} if self.properties is not None else {}
+        # if key in d:
+        #     assert not isinstance(d[key], list)
+        #     if isinstance(d[key], tuple):
+        #         d[key] = d[key] + (value,)
+        #     else:
+        #         d[key] = (d[key], value)
+        # else:
+        #     d[key] = (value,)
+        return FBinaryPredicate(self.rel, self.src, self.dst, self.score, update_property(self.properties, key, value))
+
+    def __repr__(self):
+        return self.__str__()
 
     def __str__(self):
         name = self.rel
@@ -123,6 +180,9 @@ class FAnd:
     meta: str = field(default_factory=lambda: "FAnd")
     # matched: bool = field(default_factory=lambda: False)
 
+    def __repr__(self):
+        return self.__str__()
+
     def __str__(self):
         return "\\left(" + (" \\wedge ".join(map(str, self.args))) + "\\right)"
 
@@ -134,6 +194,9 @@ class FOr:
     meta: str = field(default_factory=lambda: "FOr")
     # matched: bool = field(default_factory=lambda: False)
 
+    def __repr__(self):
+        return self.__str__()
+
     def __str__(self):
         return "\\left(" + (" \\vee ".join(map(str, self.args))) + "\\right)"
 
@@ -143,10 +206,13 @@ class FNot:
     meta: str = field(default_factory=lambda: "FNot")
     matched: bool = field(default_factory=lambda: False)
 
+    def __repr__(self):
+        return self.__str__()
+
     def __str__(self):
         return " \\neg \\left(" + str(self.arg) + "\\right)"
 
-Formula = Union[FOr, FAnd, FUnaryPredicate, FUnaryPredicate, FVariable, FNot]
+Formula = Union[FOr, FAnd, FUnaryPredicate, FBinaryPredicate, FVariable, FNot]
 
 @dataclass(order=True, frozen=True, eq=True)
 class FNot:
@@ -154,10 +220,14 @@ class FNot:
     meta: str = field(default_factory=lambda: "FNot")
     matched: bool = field(default_factory=lambda: False)
 
+    def __repr__(self):
+        return self.__str__()
+
     def __str__(self):
         return " \\neg \\left(" + str(self.arg) + "\\right)"
 
-
+def make_not(param):
+    return FNot(arg=param)
 
 def formula_from_dict(f: Union[dict, str]):
     """

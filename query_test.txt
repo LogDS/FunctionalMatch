@@ -1,61 +1,21 @@
-import "example_ext"  in-module "FunctionalMatch.example.Node" // Determining where the function is declared
-import "example_call" in-module "FunctionalMatch.example.Node" // Determining where the function is declared
-import Node           in-module "FunctionalMatch.example.Node" // Determining where the class is declared
-import "adjectivalForm" in-module "FunctionalMatch.example.parmenides.queries"
-import "partOf" in-module "FunctionalMatch.example.parmenides.queries"
-import "isA" in-module "FunctionalMatch.example.parmenides.queries"
-import "isOfType" in-module "FunctionalMatch.example.parmenides.queries"
-import "getOutgoingNodes" in-module "FunctionalMatch.example.parmenides.queries"
-import "addAdjective" in-module "FunctionalMatch.example.parmenides.queries"
-import FBinaryPredicate in-module "FunctionalMatch.example.parmenides.Formulae"
-import FUnaryPredicate in-module "FunctionalMatch.example.parmenides.Formulae"
-import FVariable in-module "FunctionalMatch.example.parmenides.Formulae"
-
-// query #1: If x has y and x is part of z, then also z has y
-nested match FBinaryPredicate ( "have", var(src), ( FVariable (_, "JJ",_,_,_,_) ) , _ , _ )
-       replace var(x) with  jsonpath "$0:$.src.name"
-       extend-with "getOutgoingNodes" with variable : "x" result : "f" rel : "partOf"
-       as deep rewrite jsonpath "$0:$.src.name" to var(f)
-       ;
-
-// query #2
-nested match FBinaryPredicate ( "have", var(src), ( FVariable (_, "JJ",_,_,_,_) ) , _ , _ )
-       replace var(x) with  jsonpath "$0:$.src.name"
-       extend-with "getOutgoingNodes" with variable : "x" result : "f" rel : "isA"
-       as deep rewrite jsonpath "$0:$.src.name" to var(f)
-       ;
-
-// query #3: If x has a property y which is an adjective, then x exists with such a property
-nested match   FBinaryPredicate ( "have", var(src), var(dst) , var(score), var(props) )
-       replace var(x) with  jsonpath "$0:$.dst.name"
-       where call "isOfType" with variable : "x" type : "Adjective"
-       as      FUnaryPredicate ( "be" ,  ( "addAdjective" ( var(src) ) with adjective : var(x) ) , var(score), var(props) )
-       ;
-
-// query #4: If x has a property y and y is equivalent to z, then x has also z
-nested match   FBinaryPredicate ( "have", var(src), var(dst) , var(score), var(props) )
-       replace var(x) with  jsonpath "$0:$.dst.name"
-       extend-with "getOutgoingNodes" with variable : "x"   result : "z"   rel : "eqTo"
-       as deep rewrite jsonpath "$0:$.dst.name" to var(z)
-       ;
-
-// query invent 88-89
-nested match FUnaryPredicate (   var(x) , var(arg) ,  var(score), var(props) )
-       extend-with "getOutgoingNodes" with variable : "x" result : "f" rel: "adjectivalForm"
-       as   FUnaryPredicate ( "be" ,  ( "addAdjective" ( var(arg) ) with adjective : var(f) ) , var(score), var(props) )
+import FBinaryPredicate                       in-module "FunctionalMatch.example.parmenides.Formulae"
+import FUnaryPredicate                        in-module "FunctionalMatch.example.parmenides.Formulae"
+import FNot                                   in-module "FunctionalMatch.example.parmenides.Formulae"
+import FVariable                              in-module "FunctionalMatch.example.parmenides.Formulae"
+import "nonEmptyMatch"                        in-module "FunctionalMatch.example.parmenides.queries"
+import "getMultiwayAdjectivalPoint"           in-module "FunctionalMatch.example.parmenides.queries"
+import "getMultiwayTargetSimpleSentence"      in-module "FunctionalMatch.example.parmenides.queries"
+import "isOfType"                             in-module "FunctionalMatch.example.parmenides.queries"
+import "addProperty"                          in-module "FunctionalMatch.example.parmenides.queries"
+import "getOutgoingNodes"                     in-module "FunctionalMatch.example.parmenides.queries"
+import "extractProperties"                    in-module "FunctionalMatch.example.parmenides.queries"
+import "removeFromProperties"                 in-module "FunctionalMatch.example.parmenides.queries"
+import "addAdjective"                         in-module "FunctionalMatch.example.parmenides.queries"
 
 
+// query #7: If x exists with y and y is opposite to z, then x does not exists with z
+nested match FUnaryPredicate ("be", ( FVariable ( var(x), "JJ") ), var(score), var(props) )
+       replace var(arg) with  jsonpath "$0:$.arg"
+       extend-with "extractProperties" with from : "$0" field : "SPACE" result : "yvar"
+       as FBinaryPredicate ("has", var(yvar) , var(arg), var(score), ( "removeFromProperties" ( var(props) ) with key : "SPACE" )  )
 ;
-
-
-
-/*
-
-nested match Node(var(x), var(r), var(l))                       // Performing pattern matching with the node class and some arguments of interest
-       extend-with "example_ext" with printer : "ciao"          // Passing the function some extra arguments with the with statement.
-       replace var(y) with var(r)                               // Performing some variable replacement operations
-       where (var(x) ⩽ (python "0")) || ((jsonpath "$0:$.left.val") = (python "0")) // Filtering the resulting rows according to somethihng
-       as    Node(var(genoveffo), "example_call" ( var(r) ), var(y))               // Newly instantiating something
-;
-
-*/

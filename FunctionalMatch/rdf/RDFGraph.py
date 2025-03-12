@@ -246,7 +246,7 @@ class RDFGraph(object):
              ?src ?edge_type ?dst.
              ?src parmenides:entryPoint ?src_entry.
              ?src_entry rdfs:label ?src_label.
-             ?src_multi parmenides:hasAdjective ?src_spec_node.
+             ?src parmenides:hasAdjective ?src_spec_node.
              ?src_spec_node rdfs:label ?src_spec.
              ?dst rdfs:label ?dst_label .
          }"""
@@ -393,6 +393,13 @@ class RDFGraph(object):
     def getOutgoingNodes(self, srcLabel, edgeType):
         S = set()
         for x in self.single_edge(srcLabel, edgeType, "^x"):
+            if x["@^hasResult"]:
+                S.add( x["x"])
+        return S
+
+    def getIngoingNodes(self, dstLabel, edgeType):
+        S = set()
+        for x in self.single_edge("^x", edgeType, dstLabel):
             if x["@^hasResult"]:
                 S.add( x["x"])
         return S

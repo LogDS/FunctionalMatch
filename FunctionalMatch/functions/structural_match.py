@@ -31,7 +31,7 @@ class JSONPath:
 
 
 def _structural_match(query:object, target:object, match_result):
-    if type(query).__name__ == "Ignore":
+    if (query is None) or (type(query).__name__ == "Ignore"):
         return match_result
     if type(query).__name__ == "Variable":
         match_result[query.name] = target

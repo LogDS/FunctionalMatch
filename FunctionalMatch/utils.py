@@ -86,6 +86,33 @@ def transitive_closure(a):
         closure = closure_until_now
     return closure
 
+
+class CountingDictionary:
+    def __init__(self):
+        self.counter = dict()
+        self.reverseConstituent = dict()
+
+    def add(self, x):
+        if x not in self.counter:
+            self.reverseConstituent[len(self.counter)] = x
+            self.counter[x] = len(self.counter)
+        return self.counter[x]
+
+    def getAllObjects(self):
+        return list(map(self.fromId, range(len(self.counter))))
+
+    def __len__(self):
+        return len(self.counter)
+
+    def fromId(self, x):
+        return self.reverseConstituent[int(x)]
+
+    def contains(self, x):
+        if x not in self.counter:
+            return -1
+        return self.counter[x]
+
+
 class FrozenDict(collections.abc.Mapping):
     """author: https://stackoverflow.com/a/2704866/1376095"""
 

@@ -504,6 +504,7 @@ class Parmenides(RDFGraph):
                 f.write(os.linesep)
         return f
 
+    @lru_cache()
     def name_eq(self, src, dst):
         if (src == dst):
             return CasusHappening.EQUIVALENT
