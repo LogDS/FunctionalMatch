@@ -15,12 +15,16 @@ import dacite
 
 from FunctionalMatch.utils import FrozenDict
 
-def navigate_dataclass(obj, jsonpath_expr):
+def navigate_dataclass(obj, jsonpath_expr, isList=False):
     from jsonpath_ng import Root, Child, Fields, Index
     if isinstance(jsonpath_expr, Root):
-        return obj
+        return [obj] if isList else obj
     if isinstance(jsonpath_expr, Child):
-        return navigate_dataclass(navigate_dataclass(obj, jsonpath_expr.left), jsonpath_expr.right)
+        L = [navigate_dataclass(child, jsonpath_expr.right) for child in navigate_dataclass(obj, jsonpath_expr.left, True)]
+        if (not isList) and (len(L) == 1):
+            return L[0]
+        else:
+            return L
     if isinstance(jsonpath_expr, Fields):
         L = []
         allFields = False
@@ -31,12 +35,12 @@ def navigate_dataclass(obj, jsonpath_expr):
             else:
                 if hasattr(obj, field):
                     L.append(getattr(obj, field))
-        if (not allFields) and len(L) == 1:
+        if (not isList) and ((not allFields) and len(L) == 1):
             return L[0]
         else:
             return L
     elif isinstance(jsonpath_expr, Index):
-        return obj[jsonpath_expr.index]
+        return [obj[jsonpath_expr.index]] if isList else obj[jsonpath_expr.index]
 
 def jpath_interpret(obj, path):
     if (path == "$"):
@@ -62,7 +66,7 @@ def jpath_update(obj, path, value):
         result_obj = result_dct
     return result_obj
 
-def var_interpret(obj, kwargs:dict|FrozenDict):
+def var_interpret(obj, kwargs:dict|FrozenDict, keepList=False):
     from FunctionalMatch import JSONPath
     from FunctionalMatch.functions.structural_match import Variable
     from jsonpath_ng import jsonpath, parse
@@ -83,7 +87,7 @@ def var_interpret(obj, kwargs:dict|FrozenDict):
         if pathing_object is not None and is_dataclass(pathing_object):
                 jsonpath_expr = parse(pathing_over_expr)
                 L = [match.value for match in jsonpath_expr.find(asdict(pathing_object))]
-                return navigate_dataclass(pathing_object, jsonpath_expr)
+                return navigate_dataclass(pathing_object, jsonpath_expr, keepList)
                 # return L[0] if (not keepList) and (len(L) == 1) else L
         else:
             return None
