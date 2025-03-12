@@ -1,3 +1,4 @@
+from collections import defaultdict
 
 
 def knowledge_expansion(sentence, queries):
@@ -8,15 +9,23 @@ def knowledge_expansion(sentence, queries):
     assert ParmenidesSingleton.isReady()
     from FunctionalMatch.example.parmenides.Formulae import FAnd, FOr
     assert (not isinstance(sentence, FAnd)) and (not isinstance(sentence, FOr))
-    S = {sentence}
-    previous_size = 0
-    while len(S) > previous_size:
-        previous_size = len(S)
-        for idx, query in enumerate(queries):
-            hasResult, outcomes = query(list(S))
-            if hasResult:
-                for x in outcomes:
-                    S.add(x)
+    S = dict()
+    S[sentence] = list()
+    # previous_size = 0
+    toVisit = {sentence}
+    while len(toVisit) > 0:
+        # previous_size = len(S)
+        tmp = set()
+        for src in toVisit:
+            for idx, query in enumerate(queries):
+                hasResult, outcomes = query([src])
+                if hasResult:
+                    for x in outcomes:
+                        S[src].append((idx,x))
+                        if x not in S:
+                            S[x] = list()
+                            tmp.add(x)
+        toVisit = tmp
     return S #Expanded knowledge
 
 

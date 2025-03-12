@@ -8,6 +8,7 @@ from functools import reduce
 
 from FunctionalMatch.example.LaSSI.eFOLsemantics.ExpandConstituents import ExpandConstituents
 from FunctionalMatch.example.parmenides.Formulae import Formula
+from FunctionalMatch.example.parmenides.formula_utils import latex_rendering
 from FunctionalMatch.utils import CountingDictionary
 
 def with_variables_from(f, l, minimal_constituents: CountingDictionary, fn, selection=False):
@@ -63,6 +64,12 @@ class TabularCWASemantics:
 
     def getEqExpansions(self, minimal_constituent_idx):
         return self.ec.getEqExpansions(minimal_constituent_idx)
+
+    def getImplExpansionExplanation(self, minimal_constituent_idx, rw=None):
+        return self.ec.getImplExpansionExplanation(minimal_constituent_idx, rw)
+
+    def getEqExpansionExplanation(self, minimal_constituent_idx, rw=None):
+        return self.ec.getEqExpansionExplanation(minimal_constituent_idx, rw)
 
     def __call__(self, i, j):
         return self.get_straightforward_id_similarity(self.sentence_to_id[i], self.sentence_to_id[j])
@@ -124,26 +131,41 @@ class TabularCWASemantics:
             li["id"] = f"constituent{idx}"
             li.append(latex_formula_rendering(x))
 
-
             pp = Tag(name="p")
-            pp.append("Eq Rewriting")
+            pp.append("Eq Rewriting:")
             li.append(pp)
-
             ool = Tag(name="ol")
-            for x in self.getEqExpansions(idx):
+            eqex = self.getEqExpansions(idx)
+            meqex = {x:idx2+1 for idx2, x in enumerate(eqex)}
+            fmeqex = self.getEqExpansionExplanation(idx, meqex)
+            for x in eqex:
                 lli = Tag(name="li")
                 lli.append(latex_formula_rendering(x))
+                uuul = Tag(name="ul")
+                for rule in fmeqex[x]:
+                    llli = Tag(name="li")
+                    llli.append(latex_rendering(rule))
+                    uuul.append(llli)
+                lli.append(uuul)
                 ool.append(lli)
             li.append(ool)
 
             pp = Tag(name="p")
-            pp.append("Impl Rewriting")
+            pp.append("Impl Rewriting:")
             li.append(pp)
-
+            imex = self.getImplExpansions(idx)
+            mimex = {x:idx2+1 for idx2, x in enumerate(imex)}
+            fmimex = self.getImplExpansionExplanation(idx, mimex)
             ool = Tag(name="ol")
-            for x in self.getImplExpansions(idx):
+            for x in imex:
                 lli = Tag(name="li")
                 lli.append(latex_formula_rendering(x))
+                uuul = Tag(name="ul")
+                for rule in fmimex[x]:
+                    llli = Tag(name="li")
+                    llli.append(latex_rendering(rule))
+                    uuul.append(llli)
+                lli.append(uuul)
                 ool.append(lli)
             li.append(ool)
 

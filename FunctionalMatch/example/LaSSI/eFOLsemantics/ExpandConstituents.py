@@ -343,7 +343,7 @@ def instantiate_rules(constituents, expansion_dictionary, final_constituents, is
         # s.add(constituent)
         expansion_dictionary[constituent] = s
     for y in expansion_dictionary.values():
-        final_constituents = final_constituents.union(set(y))
+        final_constituents = final_constituents.union(set(y.keys()))
     # return {(x, y): CasusHappening.NONE for x in final_constituents for y in
     #         final_constituents}
 
@@ -404,16 +404,48 @@ class ExpandConstituents:
         self.ms = ModelSearch()
         self.lhsOrigDict = dict()
         self.rhsOrigDict = dict()
+        self.inv_idx = dict()
         print("Splitting across unary and binary constituents for each sentence...")
         for i, sentence in enumerate(self.constituents):
-            self.lhsOrigDict[i] = ModelSearchBasis(sentence, self.impl_expansion_dictionary[sentence])
-            self.rhsOrigDict[i] = ModelSearchBasis(sentence, self.eq_expansion_dictionary[sentence])
+            self.inv_idx[sentence] = i
+            self.lhsOrigDict[i] = ModelSearchBasis(sentence, self.impl_expansion_dictionary[sentence].keys())
+            self.rhsOrigDict[i] = ModelSearchBasis(sentence, self.eq_expansion_dictionary[sentence].keys())
 
     def getImplExpansions(self, idx):
         return self.lhsOrigDict[idx].all() if idx in self.lhsOrigDict else []
 
     def getEqExpansions(self, idx):
         return self.rhsOrigDict[idx].all() if idx in self.lhsOrigDict else []
+
+    def getImplExpansionExplanation(self, idx, rw=None):
+        constituent = self.constituents[idx]
+        assert idx == self.inv_idx[constituent]
+        # result = []
+        map = self.impl_expansion_dictionary[constituent]
+        neumap = defaultdict(list)
+        for k, ls in map.items():
+            for (ruleId, target) in ls:
+                kk = rw[k] if rw is not None else k
+                tk = rw[target] if rw is not None else target
+                r = str(kk)+"\\xrightarrow{"+str(ruleId+1)+"}"+str(tk)
+                neumap[target].append(r)
+                # result.append(r)
+        return neumap
+
+    def getEqExpansionExplanation(self, idx, rw=None):
+        constituent = self.constituents[idx]
+        assert idx == self.inv_idx[constituent]
+        # result = []
+        map = self.eq_expansion_dictionary[constituent]
+        neumap = defaultdict(list)
+        for k, ls in map.items():
+            for (ruleId, target) in ls:
+                kk = rw[k] if rw is not None else k
+                tk = rw[target] if rw is not None else target
+                r = str(kk)+"\\xrightarrow{"+str(ruleId+1)+"}"+str(tk)
+                neumap[target].append(r)
+                # result.append(r)
+        return neumap
 
     def determine(self, i: int, j: int):
         if (i == j):
