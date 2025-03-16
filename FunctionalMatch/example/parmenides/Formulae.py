@@ -64,6 +64,9 @@ class FVariable:
     def add_adjective(self, adj, type="JJ"):
         return FVariable(self.name, self.type, self.specification, FVariable(adj, type, "", None, -1), self.id, self.properties)
 
+    def dropCopula(self):
+        return FVariable(self.name, self.type, self.specification, None, self.id, self.properties)
+
     def add_property(self, key, value):
         # d = {k:v for k,v in self.properties} if self.properties is not None else {}
         # if key in d:
@@ -84,6 +87,7 @@ class FVariable:
             name = "?"
         else:
             name = "\\textsf{" + name + "}"
+        assert isinstance(self.specification, str) or (self.specification is None)
         if (self.specification is not None) and len(str(self.specification))>0:
             name += (" [\\textup{of}] \\textit{" + str(self.specification)) + "}"
             name = "\\left[" + name + "\\right]^{\\texttt{" + str(self.id) + "}}"

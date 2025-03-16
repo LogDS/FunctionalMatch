@@ -3,7 +3,9 @@ import latextools
 from FunctionalMatch.example.parmenides.Formulae import Formula
 from bs4 import BeautifulSoup, Tag
 
-def latex_rendering(strx):
+def latex_rendering(strx, mathjax=True):
+    if mathjax:
+        return '$' + strx + '$'
     latex_eq = latextools.render_snippet(
         r'$' + strx + '$',
         commands=[latextools.cmd.all_math])
@@ -13,11 +15,11 @@ def latex_rendering(strx):
     svg = 'data:image/svg+xml;base64,{}'.format(encoded.decode())
     img = Tag(name="img")
     img["src"] = svg
-    img["style"] = "width: 10vw; min-width: 50px;"
+    # img["style"] = "width: 10vw; min-width: 50px;"
     return img
 
-def latex_formula_rendering(formula:Formula):
-    return latex_rendering(str(formula))
+def latex_formula_rendering(formula:Formula, mathjax=True):
+    return latex_rendering(str(formula), mathjax=True)
 
 def practicalInstance(self, class_, name):
     return isinstance(self, class_) or type(self).__name__ == name

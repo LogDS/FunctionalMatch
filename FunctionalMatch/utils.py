@@ -153,7 +153,11 @@ class FrozenDict(collections.abc.Mapping):
 
     def update(self, key, value):
         j = copy.deepcopy(self._d)
-        j[key] = value
+        if value is None:
+            if key in j:
+                del j[key]
+        else:
+            j[key] = value
         return FrozenDict(**j)
 
     def __contains__(self, item):

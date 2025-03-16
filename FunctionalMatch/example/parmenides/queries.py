@@ -15,7 +15,9 @@ def getMultiwayAdjectivalPoint(d, **kwargs):
     assert adj is not None
     assert rel is not None
     assert result is not None
-    assert main in d
+    if (main not in d) or (adj not in d):
+        return []
+    # assert main in d
     assert adj in d
     main = d[main]
     adj = d[adj]
@@ -37,6 +39,8 @@ def getMultiwayAdjectivalPoint(d, **kwargs):
 
 def getMultiwayTargetSimpleSentence(d, **kwargs):
     main = kwargs.get("main", None)
+    if (main is None) or (main not in d):
+        return []
     assert main is not None
     assert main in d
     main = d[main]
@@ -208,6 +212,15 @@ def addAdjective(arg, **kwargs):
         assert var is not None
         assert isinstance(var, str)
         return arg.add_adjective(var)
+    else:
+        raise RuntimeError("ERROR: we can add an adjective only to something that is a variable!")
+
+def dropCopula(arg, **kwargs):
+    if arg is None:
+        print("No variable to add the adjective: returning NONE")
+        return None
+    if isinstance(arg, FVariable) or type(arg).__name__ == "FVariable":
+        return arg.dropCopula()
     else:
         raise RuntimeError("ERROR: we can add an adjective only to something that is a variable!")
 

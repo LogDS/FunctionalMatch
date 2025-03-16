@@ -14,6 +14,7 @@ import "removeFromProperties"                 in-module "FunctionalMatch.example
 import "addAdjective"                         in-module "FunctionalMatch.example.parmenides.queries"
 import "addSpecification"                     in-module "FunctionalMatch.example.parmenides.queries"
 import "getIngoingNodes"                      in-module "FunctionalMatch.example.parmenides.queries"
+import "dropCopula"                           in-module "FunctionalMatch.example.parmenides.queries"
 
 
 // query #3: If x has a property y which is an adjective, then x exists with such a property
@@ -58,10 +59,10 @@ nested match        FUnaryPredicate ( "be",  var(arg) , var(score), var(props)  
 // query #8:  If a location has a given property, then this is equal to a thing to exist at a given location
 nested match   FBinaryPredicate ( "have", var(src), var(dst) , var(score), var(props) )
        replace var(x) with  jsonpath "$0:$.src.name"
-       where (call "isOfType" with variable : "x" type : "LOC") || (call "isOfType" with variable : "x" type : "GPE")
+       where (call "nonEmptyMatch" with variable : "x") && (call "isOfType" with variable : "x" type : "LOC") || (call "isOfType" with variable : "x" type : "GPE")
        as   FUnaryPredicate ( "be" ,  ( "addProperty" ( var(dst) ) with key : "SPACE" value : var(src) )  , var(score), var(props) )
        ;
-//
+
 
 // query 9: If the nome/adjective pair is related to a given concept, then this can be grouped as one single variable and represent the relatedness as a RelatedTo
 nested match        FBinaryPredicate ( "have", var(src), ( FVariable (var(y), var(a) ,var(b),var(c),var(d),var(e)) ) , var(score), var(props) )
@@ -116,8 +117,44 @@ nested match FBinaryPredicate (   var(x) , var(src) ,   var(dst) , var(score), v
 ;
 
 // query 18
-nested match FUnaryPredicate ("be", ( FVariable ( var(x), "JJ",var(b),var(c),var(d),var(e)) ), var(score), var(props) )
-       replace var(arg) with  jsonpath "$0:$.arg"
+nested match FUnaryPredicate ("be", var(arg), var(score), var(props) )
        extend-with "extractProperties" with from : "$0" field : "SPACE" result : "yvar"
-       as FBinaryPredicate ("has", var(yvar) , var(arg), var(score), ( "removeFromProperties" ( var(props) ) with key : "SPACE" )  )
+       as FBinaryPredicate ("have", var(yvar) , var(arg), var(score), ( "removeFromProperties" ( var(props) ) with key : "SPACE" )  )
 ;
+
+
+// query 21: Extracting negation from the argument to the entire sentence (be)
+nested match FUnaryPredicate ("be", FNot (var(arg)), var(score), var(props) )
+       extend-with "extractProperties" with from : "$0" field : "SPACE" result : "yvar"
+       as FNot ( FUnaryPredicate ("be", var(arg), var(score), var(props) ) )
+;
+
+// query 22: Extracting negation from the argument to the entire sentence (have)
+nested match FBinaryPredicate ( "have", FNot (var(src)), var(dst) , var(score), var(props) )
+       extend-with "extractProperties" with from : "$0" field : "SPACE" result : "yvar"
+       as FNot (  FBinaryPredicate ( "have",  var(src), var(dst) , var(score), var(props) ) )
+;
+
+// query 23: Extracting negation from the argument to the entire sentence (have)
+nested match FBinaryPredicate ( "have", var(src), FNot (var(dst)), var(score), var(props) )
+       extend-with "extractProperties" with from : "$0" field : "SPACE" result : "yvar"
+       as FNot (  FBinaryPredicate ( "have",  var(src), var(dst) , var(score), var(props) ) )
+;
+
+// query 24: Extracting be from have target
+nested match FBinaryPredicate ( _, _, var(dst), var(score), var(props) )
+       as (  FUnaryPredicate ( "be",  var(dst) , var(score), ( "removeFromProperties" ( var(props) ) with key : "AIM_OBJECTIVE" ) ) )
+;
+
+// query 25: Extracting be from have target
+nested match FBinaryPredicate ( _, var(src), _, var(score), var(props) )
+       as (  FUnaryPredicate ( "be",  var(src) , var(score), ( "removeFromProperties" ( var(props) ) with key : "AIM_OBJECTIVE" )  ) )
+;
+
+nested match   FUnaryPredicate ( "be", var(src), var(score), var(props) )
+       replace var(x) with  jsonpath "$0:$.arg.name",
+               var(cop) with jsonpath "$0:$.arg.cop"
+       where (call "nonEmptyMatch" with variable : "cop") && (call "nonEmptyMatch" with variable : "x") && ((call "isOfType" with variable : "x" type : "LOC") || (call "isOfType" with variable : "x" type : "GPE"))
+       as deep rewrite var(src) to "dropCopula" ( var(src) ) ,
+                       jsonpath "$0:$" to  FUnaryPredicate ( "be" ,  var(cop) , var(score), ( "addProperty" ( var(props) ) with key : "SPACE" value :  var(src) ) )
+       ;

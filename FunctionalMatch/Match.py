@@ -45,7 +45,7 @@ class ExternalMatchByExtesion:
         return ExternalMatchByExtesion(self.function_name, self.module, self.extra_args, element)
 
     def structural_map(self, f):
-        extra_args = {f(k): f(v) for k, v in self.extra_args.items()} if self.extra_args is not None else None
+        extra_args = {f(k): f(v) for k, v in self.extra_args.items()} if self.extra_args is not None else dict()
         packed_call = f(self.packed_call) if self.packed_call is not None else None
         return ExternalMatchByExtesion(self.function_name, self.module, FrozenDict.from_dictionary(extra_args), packed_call)
 
@@ -182,6 +182,8 @@ class Match:
                     fun = self.extension[ext_id]
                     curr = curr if isinstance(curr, FrozenDict) else FrozenDict.from_dictionary(curr)
                     result = fun(curr)
+                    if result is None:
+                        continue
                     if ext_id+1 < len(self.extension):
                         if isinstance(result, list):
                             for x in result:

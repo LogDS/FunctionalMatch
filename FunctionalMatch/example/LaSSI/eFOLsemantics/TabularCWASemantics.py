@@ -115,10 +115,28 @@ class TabularCWASemantics:
         # print(f"{i}~{j} := {total}")
         return total
 
-    def buildReport(self, file):
-        from bs4 import Tag
+    def buildReport(self, file, mathJax = True):
+        from bs4 import Tag, BeautifulSoup
         from FunctionalMatch.example.parmenides.formula_utils import latex_formula_rendering
         html = Tag(name="html")
+        if mathJax:
+            mathjax = """
+            <script type="text/javascript" id="MathJax-script" async
+      src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.0.0/es5/latest?tex-mml-chtml.js">
+    </script>
+    <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      }
+    };
+    </script>
+    <script id="MathJax-script" async
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+    </script>"""
+            parser = BeautifulSoup(mathjax)
+            for x in list(parser.children):
+                html.append(x)
         body = Tag(name="body")
 
         p_ = Tag(name="h1")
@@ -129,7 +147,7 @@ class TabularCWASemantics:
         for idx, x in enumerate(constituents):
             li = Tag(name="li")
             li["id"] = f"constituent{idx}"
-            li.append(latex_formula_rendering(x))
+            li.append(latex_formula_rendering(x, mathJax))
 
             pp = Tag(name="p")
             pp.append("Eq Rewriting:")
@@ -140,7 +158,7 @@ class TabularCWASemantics:
             fmeqex = self.getEqExpansionExplanation(idx, meqex)
             for x in eqex:
                 lli = Tag(name="li")
-                lli.append(latex_formula_rendering(x))
+                lli.append(latex_formula_rendering(x, mathJax))
                 uuul = Tag(name="ul")
                 for rule in fmeqex[x]:
                     llli = Tag(name="li")
@@ -159,7 +177,7 @@ class TabularCWASemantics:
             ool = Tag(name="ol")
             for x in imex:
                 lli = Tag(name="li")
-                lli.append(latex_formula_rendering(x))
+                lli.append(latex_formula_rendering(x, mathJax))
                 uuul = Tag(name="ul")
                 for rule in fmimex[x]:
                     llli = Tag(name="li")
@@ -199,7 +217,7 @@ class TabularCWASemantics:
 
             p1 = Tag(name="p")
             p1.append("Logic form: ")
-            p1.append(latex_formula_rendering(sentence))
+            p1.append(latex_formula_rendering(sentence, mathJax))
             body.append(p1)
 
             p2 = Tag(name="p")
@@ -211,7 +229,7 @@ class TabularCWASemantics:
                 ali = Tag(name="a")
                 ali["href"] = f"#constituent{x_idx}"
                 ali.append(str(x_idx))
-                ali.append(latex_formula_rendering(constituents[x_idx]))
+                ali.append(latex_formula_rendering(constituents[x_idx], mathJax))
                 li.append(ali)
                 ol.append(li)
 

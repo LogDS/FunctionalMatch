@@ -14,13 +14,23 @@ import "removeFromProperties"                 in-module "FunctionalMatch.example
 import "addAdjective"                         in-module "FunctionalMatch.example.parmenides.queries"
 import "addSpecification"                     in-module "FunctionalMatch.example.parmenides.queries"
 import "getIngoingNodes"                      in-module "FunctionalMatch.example.parmenides.queries"
+import "dropCopula"                           in-module "FunctionalMatch.example.parmenides.queries"
 
-// query #7: If x exists with y and y is opposite to z, then x does not exists with z
-nested match        FUnaryPredicate ( "be",  var(arg) , var(score), var(props)  )
-       replace var(x) with    jsonpath "$0:$.arg.cop.name",
-               var(orig) with jsonpath "$0:$"
-       extend-with  "getOutgoingNodes" with variable : "x"   result : "z"   rel : "neqTo"
-       where call "nonEmptyMatch" with variable : "x"
-       as deep rewrite jsonpath "orig:$.arg.cop.name" to var(z),
-                       jsonpath "$0:$"             to FNot ( var(orig) )
+// query 24: Extracting be from have target
+nested match FBinaryPredicate ( _, _, var(dst), var(score), var(props) )
+       as (  FUnaryPredicate ( "be",  var(dst) , var(score), ( "removeFromProperties" ( var(props) ) with key : "AIM_OBJECTIVE" ) ) )
+;
+
+
+// query 25: Extracting be from have target
+nested match FBinaryPredicate ( _, var(src), _, var(score), var(props) )
+       as (  FUnaryPredicate ( "be",  var(src) , var(score), ( "removeFromProperties" ( var(props) ) with key : "AIM_OBJECTIVE" )  ) )
+;
+
+nested match   FUnaryPredicate ( "be", var(src), var(score), var(props) )
+       replace var(x) with  jsonpath "$0:$.arg.name",
+               var(cop) with jsonpath "$0:$.arg.cop"
+       where (call "nonEmptyMatch" with variable : "cop") && (call "nonEmptyMatch" with variable : "x") && ((call "isOfType" with variable : "x" type : "LOC") || (call "isOfType" with variable : "x" type : "GPE"))
+       as deep rewrite var(src) to "dropCopula" ( var(src) ) ,
+                       jsonpath "$0:$" to  FUnaryPredicate ( "be" ,  var(cop) , var(score), ( "addProperty" ( var(props) ) with key : "SPACE" value :  var(src) ) )
        ;

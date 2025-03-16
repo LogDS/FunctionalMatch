@@ -1,44 +1,10 @@
 import logging
 
 from FunctionalMatch.example.LaSSI.eFOLsemantics.TabularCWASemantics import TabularCWASemantics
-# from FunctionalMatch import var, structural_match, instantiate, JSONPath
-from FunctionalMatch.example.parmenides.Formulae import FUnaryPredicate, FVariable, FBinaryPredicate
-# from FunctionalMatch.example.LaSSI.eFOLsemantics.knowledge_expansion import knowledge_expansion
+from FunctionalMatch.example.parmenides.Formulae import FUnaryPredicate, FVariable, FBinaryPredicate, formula_from_dict
 from FunctionalMatch.language.LanguageMainPoint import parse_query
 
-
-# def raw_ex():
-#     l1 = Node.leaf(1)
-#     l2 = Node.leaf(2)
-#     l3 = Node.leaf(3)
-#     s1 = Node(0, l2, l3)
-#     r = Node(5, s1, l1)
-#
-#     from FunctionalMatch.functions.structural_match import var
-#     q = Node(var("x"), var("l"), var("r"))
-#     b, result = structural_match(q,
-#                                  r,
-#                                  True,
-#                                  Or(LEq(var("x"), 0), Eq(JSONPath("$.left.val"), 0)))
-#     print(b)
-#     print(result)
-#
-#     instance = instantiate(q, **{"x": 23, "l": l1})
-#     print(instance)
-
-
-def tst_query():
-    ## INIT PARMENIDES
-    import os
-    parmenides = "parmenides.ttl" if os.path.isfile("parmenides.ttl") else None
-    from FunctionalMatch.example.parmenides.Parmenides import ParmenidesSingleton
-    logging.basicConfig(level=logging.INFO)
-    ParmenidesSingleton.instance()
-    ParmenidesSingleton.init("/home/giacomo/PyCharmProjects/FunctionalMatch/data/cache", "giacomo", "omocaig",
-                             "localhost", 5432, False, parmenides)
-
-    # queries = parse_query("/query_impl.txt")
-
+def build_mock_test_sentences():
     traffic = FVariable("traffic", "Noun", None, None, 1)
     city_center = FVariable("city center", "Noun", None, None, 1)
     adj1 = FVariable("busy", "JJ", None, None, 1)
@@ -55,6 +21,33 @@ def tst_query():
 
     sentences = [datum, datum2, datum3, datum4, datum5, datum6, datum7]
 
+    return sentences
+
+def load_paper_sentences():
+    with open("/home/giacomo/projects/LaSSI/catabolites/all_newcastle/logical_rewriting.json", "r") as f:
+        import json
+        data = json.load(f)
+    assert isinstance(data, list)
+    return [formula_from_dict(dct) for dct in data]
+    # for dct in data:
+    #     this = formula_from_dict(dct)
+    #     print(this)
+
+def tst_query(sentences = None):
+    ## INIT PARMENIDES
+    import os
+    parmenides = "parmenides.ttl" if os.path.isfile("parmenides.ttl") else None
+    from FunctionalMatch.example.parmenides.Parmenides import ParmenidesSingleton
+    logging.basicConfig(level=logging.INFO)
+    ParmenidesSingleton.instance()
+    ParmenidesSingleton.init("/home/giacomo/PyCharmProjects/FunctionalMatch/data/cache", "giacomo", "omocaig",
+                             "localhost", 5432, False, parmenides)
+
+    # queries = parse_query("/query_impl.txt")
+
+    if sentences is None:
+        sentences = load_paper_sentences() #[load_paper_sentences()[-1]]
+
     from FunctionalMatch.example.LaSSI.eFOLsemantics.TBoxReasoning import TBoxReasoningSingleton
     print("Init TBox Reasoning Rules")
     TBoxReasoningSingleton.instance()
@@ -67,7 +60,7 @@ def tst_query():
     cwa = TabularCWASemantics(sentences, "/home/giacomo/PyCharmProjects/FunctionalMatch/data/cache")
 
     print("Building Report!")
-    cwa.buildReport("/home/giacomo/PyCharmProjects/FunctionalMatch/report.html")
+    cwa.buildReport("/home/giacomo/PyCharmProjects/FunctionalMatch/report_debug.html")
 
     # l1 = Node.leaf(1)
     # l2 = Node.leaf(2)
@@ -75,7 +68,6 @@ def tst_query():
     # s1 = Node(0, l2, l3)
     # datum = Node(5, s1, l1)
     # result = ObjDepthDeterminer.get_depth_dictionary(datum)
-
     # print(knowledge_expansion(datum, queries))
     # print(knowledge_expansion(datum2, queries))
     # print(knowledge_expansion(datum3, queries))
@@ -122,23 +114,19 @@ def simpler_test():
     ParmenidesSingleton.stop()
 
 
-def formulae_rewriting_test():
-    import os
-    parmenides = "parmenides.ttl" if os.path.isfile("parmenides.ttl") else None
-    from FunctionalMatch.example.parmenides.Parmenides import ParmenidesSingleton
-    logging.basicConfig(level=logging.INFO)
-    ParmenidesSingleton.instance()
-    ParmenidesSingleton.init("/home/giacomo/PyCharmProjects/FunctionalMatch/data/cache","giacomo", "omocaig", "localhost", 5432, False, parmenides)
-    # with open("/home/giacomo/projects/LaSSI/catabolites/all_newcastle/logical_rewriting.json", "r") as f:
-    #     data = json.load(f)
-    # assert isinstance(data, list)
-    # for dct in data:
-    #     this = formula_from_dict(dct)
-    #     print(this)
-    l = ParmenidesSingleton.get().getOutgoingNodes("flow", "adjectivalForm")
-    ParmenidesSingleton.stop()
+# def formulae_rewriting_test():
+#     # import os
+#     # parmenides = "parmenides.ttl" if os.path.isfile("parmenides.ttl") else None
+#     # from FunctionalMatch.example.parmenides.Parmenides import ParmenidesSingleton
+#     # logging.basicConfig(level=logging.INFO)
+#     # ParmenidesSingleton.instance()
+#     # ParmenidesSingleton.init("/home/giacomo/PyCharmProjects/FunctionalMatch/data/cache","giacomo", "omocaig", "localhost", 5432, False, parmenides)
+#
+#     # l = ParmenidesSingleton.get().getOutgoingNodes("flow", "adjectivalForm")
+#     # ParmenidesSingleton.stop()
 
 
 if __name__ == '__main__':
+    # formulae_rewriting_test()
     tst_query()
     # simpler_test()

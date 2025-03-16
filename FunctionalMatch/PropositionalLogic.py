@@ -35,6 +35,8 @@ def navigate_dataclass(obj, jsonpath_expr, isList=False):
             else:
                 if hasattr(obj, field):
                     L.append(getattr(obj, field))
+                elif len(jsonpath_expr.fields) == 1:
+                    return None
         if (not isList) and ((not allFields) and len(L) == 1):
             return L[0]
         else:
@@ -86,7 +88,7 @@ def var_interpret(obj, kwargs:dict|FrozenDict, keepList=False):
             pathing_object = kwargs.get(obj.expression[:val], None)
         if pathing_object is not None and is_dataclass(pathing_object):
                 jsonpath_expr = parse(pathing_over_expr)
-                L = [match.value for match in jsonpath_expr.find(asdict(pathing_object))]
+                # L = [match.value for match in jsonpath_expr.find(asdict(pathing_object))]
                 return navigate_dataclass(pathing_object, jsonpath_expr, keepList)
                 # return L[0] if (not keepList) and (len(L) == 1) else L
         else:
