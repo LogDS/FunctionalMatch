@@ -85,10 +85,12 @@ nested match        FBinaryPredicate ( "have", var(src), ( FVariable (var(y), va
        as           FBinaryPredicate ( "have", ( "addAdjective" ( var(src) ) with adjective : var(y) ) , FVariable( var(z) , "ENTITY" ) , var(score), var(props) )
 ;
 
+
+
 // query 10: if x has something which is related to soemthing else, then the source possesses also the related idea (TODO: and y has the same type of z)
 nested match        FBinaryPredicate ( "have" , var(src), ( FVariable (var(z), var(type) ,var(a),var(b),var(c),var(d)) ) , var(score), var(props))
        extend-with  "getOutgoingNodes" with variable : "z"   result : "y"   rel : "relatedTo"
-       where        (call "isOfType" with variable : "z" type : "type")
+       //where        (call "isOfType" with variable : "z" type : "type")
        as deep rewrite jsonpath "$0:$.dst.name" to var(y)
        ;
 
@@ -133,7 +135,7 @@ nested match FBinaryPredicate (   var(x) , var(src) ,   var(dst) , var(score), v
 // query 18
 nested match FUnaryPredicate ("be", var(arg), var(score), var(props) )
        extend-with "extractProperties" with from : "$0" field : "SPACE" result : "yvar"
-       as FBinaryPredicate ("has", var(yvar) , var(arg), var(score), ( "removeFromProperties" ( var(props) ) with key : "SPACE" )  )
+       as FBinaryPredicate ("have", var(yvar) , var(arg), var(score), ( "removeFromProperties" ( var(props) ) with key : "SPACE" )  )
 ;
 
 
@@ -186,6 +188,7 @@ nested match FBinaryPredicate ( _, var(src), _, var(score), var(props) )
        as (  FUnaryPredicate ( "be",  var(src) , var(score), ( "removeFromProperties" ( var(props) ) with key : "AIM_OBJECTIVE" )  ) )
 ;
 
+// query 26
 nested match   FUnaryPredicate ( "be", var(src), var(score), var(props) )
        replace var(x) with  jsonpath "$0:$.arg.name",
                var(cop) with jsonpath "$0:$.arg.cop"
@@ -193,3 +196,12 @@ nested match   FUnaryPredicate ( "be", var(src), var(score), var(props) )
        as deep rewrite var(src) to "dropCopula" ( var(src) ) ,
                        jsonpath "$0:$" to  FUnaryPredicate ( "be" ,  var(cop) , var(score), ( "addProperty" ( var(props) ) with key : "SPACE" value :  var(src) ) )
        ;
+
+
+ // query 27 (9BIS): If the nome/adjective pair is related to a given concept, then this can be grouped as one single variable and represent the relatedness as a RelatedTo
+nested match        FBinaryPredicate ( "have", var(src), ( FVariable (var(y), var(a) ,var(b),var(c),var(d),var(e)) ) , var(score), var(props) )
+       replace      var(n) with  jsonpath "$0:$.src.name"
+       extend-with  "getOutgoingNodes" with variable : "n"   result : "x"   rel : "isA",
+                    "getMultiwayAdjectivalPoint" with  main : "x" adj : "y" rel : "relatedTo" result : "z"
+       as           FBinaryPredicate ( "have", ( "addAdjective" ( var(src) ) with adjective : var(y) ) , FVariable( var(z) , "ENTITY" ) , var(score), var(props) )
+;

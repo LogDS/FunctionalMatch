@@ -219,6 +219,8 @@ class Match:
                 outcome_mapping = []
         else:
             test = len(outcome) > 0
+            if test:
+                outcome_mapping = [outcome_mapping[outcome_to_outcome_mapping[i]] for i in outcome_to_outcome_mapping.keys()]
         return test, list(zip(outcome, outcome_mapping))
 
     def __call__(self, x):

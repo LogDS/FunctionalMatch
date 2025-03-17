@@ -93,8 +93,11 @@ def parmenides_db_write():
 
 def simpler_test():
     adj2 = FVariable("fast", "JJ", None, None, 1)
-    ncl = FVariable("Newcastle", "LOC", None, None, 1)
-    becl = FUnaryPredicate("be", adj2, -1, frozenset({"SPACE": ncl}.items()))
+    adj3 = FVariable("busy", "JJ", None, None, 20)
+    adj4 = FVariable("crowd", None, None, None, 20)
+    ncl = FVariable("Newcastle", "LOC", None, None, 31)
+    becl = FUnaryPredicate("be", adj3, -1, frozenset({"SPACE": ncl}.items()))
+    have2 = FBinaryPredicate("have", ncl, adj4, 1.0, frozenset())
 
     ## INIT PARMENIDES
     import os
@@ -105,10 +108,12 @@ def simpler_test():
     ParmenidesSingleton.init("/home/giacomo/PyCharmProjects/FunctionalMatch/data/cache", "giacomo", "omocaig",
                              "localhost", 5432, False, parmenides)
 
-    queries = parse_query("/home/giacomo/PyCharmProjects/FunctionalMatch/query_test.txt")
+    queries = parse_query("/home/giacomo/PyCharmProjects/FunctionalMatch/query_impl.txt")
 
     from FunctionalMatch.example.LaSSI.eFOLsemantics.TBoxReasoning import knowledge_expansion
-    print(knowledge_expansion(becl, queries))
+    for k,v in knowledge_expansion(have2, queries).items():
+        for idx, element in v:
+            print(element)
 
     ## STOP PARMENIDES
     ParmenidesSingleton.stop()
@@ -128,5 +133,5 @@ def simpler_test():
 
 if __name__ == '__main__':
     # formulae_rewriting_test()
-    tst_query()
-    # simpler_test()
+    # tst_query()
+    simpler_test()

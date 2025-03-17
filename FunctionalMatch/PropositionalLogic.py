@@ -7,6 +7,7 @@ __maintainer__ = "Giacomo Bergami"
 __email__ = "bergamigiacomo@gmail.com"
 __status__ = "Production"
 
+import copy
 from collections import defaultdict
 from dataclasses import dataclass, is_dataclass, asdict, fields
 from typing import Union, Optional
@@ -14,6 +15,30 @@ from typing import Union, Optional
 import dacite
 
 from FunctionalMatch.utils import FrozenDict
+
+def update_dataclass_rec(obj, jsonpath_expr, value):
+    from jsonpath_ng import Root, Child, Fields, Index
+    if isinstance(jsonpath_expr, Root):
+        return value
+    if isinstance(jsonpath_expr, Child):
+        for child in navigate_dataclass(obj, jsonpath_expr.left, True):
+            if child is not None:
+                update_dataclass_rec(child, jsonpath_expr.right, value)
+    if isinstance(jsonpath_expr, Fields):
+        for field in jsonpath_expr.fields:
+            if field == "*":
+                for field in fields(obj):
+                    setattr(obj, field.name, value)
+            else:
+                if field in obj.__dataclass_fields__ and (obj.__dataclass_fields__[field]._field_type.name == '_FIELD'):
+                    object.__setattr__(obj, field, value)
+    elif isinstance(jsonpath_expr, Index):
+        obj[jsonpath_expr.index] = value
+
+def update_dataclass(obj, jsonpath_expr, value):
+    cpy = copy.deepcopy(obj)
+    update_dataclass_rec(cpy, jsonpath_expr, value)
+    return cpy
 
 def navigate_dataclass(obj, jsonpath_expr, isList=False):
     from jsonpath_ng import Root, Child, Fields, Index
@@ -89,7 +114,8 @@ def var_interpret(obj, kwargs:dict|FrozenDict, keepList=False):
         if pathing_object is not None and is_dataclass(pathing_object):
                 jsonpath_expr = parse(pathing_over_expr)
                 # L = [match.value for match in jsonpath_expr.find(asdict(pathing_object))]
-                return navigate_dataclass(pathing_object, jsonpath_expr, keepList)
+                navigation =  navigate_dataclass(pathing_object, jsonpath_expr, keepList)
+                return navigation
                 # return L[0] if (not keepList) and (len(L) == 1) else L
         else:
             return None
@@ -122,12 +148,13 @@ def var_update(value, obj, kwargs:FrozenDict):
             pathing_object = kwargs.get(obj.expression[:val], None)
         if pathing_object is not None and is_dataclass(pathing_object):
                 jsonpath_expr = parse(pathing_over_expr)
-                name_object = type(pathing_object)
-                result_dct = jsonpath_expr.update(asdict(pathing_object), value)
-                if (name_object != type(result_dct)) and ((not is_dataclass(pathing_object)) or (isinstance(result_dct, dict))):
-                    result_obj = dacite.from_dict(name_object, result_dct)
-                else:
-                    result_obj = result_dct
+                # name_object = type(pathing_object)
+                result_obj = update_dataclass(pathing_object, jsonpath_expr, value)
+                # result_dct = jsonpath_expr.update(asdict(pathing_object), value)
+                # if (name_object != type(result_dct)) and ((not is_dataclass(pathing_object)) or (isinstance(result_dct, dict))):
+                #     result_obj = dacite.from_dict(name_object, result_dct)
+                # else:
+                #     result_obj = result_dct
                 return kwargs.update(pathing_var, result_obj)
         else:
             return kwargs
