@@ -101,7 +101,7 @@ nested match   FUnaryPredicate ( "be", ( FVariable (var(x), var(a) ,var(b),var(c
 // query 15
 nested match FBinaryPredicate (   var(x) , var(src) ,   var(dst) , var(score), var(props) )
        extend-with "getOutgoingNodes" with variable : "x" result : "f" rel: "adjectivalForm"
-       as   FUnaryPredicate ( "have" ,  var(dst), FVariable ( var(f), "JJ" ) , var(score), var(props) )
+       as   FBinaryPredicate ( "have" ,  var(dst), FVariable ( var(f), "JJ" ) , var(score), var(props) )
 ;
 
 // query 16: query invent 88-89

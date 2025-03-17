@@ -36,8 +36,10 @@ def update_dataclass_rec(obj, jsonpath_expr, value):
         obj[jsonpath_expr.index] = value
 
 def update_dataclass(obj, jsonpath_expr, value):
+    t = type(obj)
     cpy = copy.deepcopy(obj)
     update_dataclass_rec(cpy, jsonpath_expr, value)
+
     return cpy
 
 def navigate_dataclass(obj, jsonpath_expr, isList=False):
@@ -148,9 +150,13 @@ def var_update(value, obj, kwargs:FrozenDict):
             pathing_object = kwargs.get(obj.expression[:val], None)
         if pathing_object is not None and is_dataclass(pathing_object):
                 jsonpath_expr = parse(pathing_over_expr)
-                # name_object = type(pathing_object)
-                result_obj = update_dataclass(pathing_object, jsonpath_expr, value)
-                # result_dct = jsonpath_expr.update(asdict(pathing_object), value)
+                name_object = type(pathing_object)
+                # result_obj = update_dataclass(pathing_object, jsonpath_expr, value)
+                result_dct = jsonpath_expr.update(asdict(pathing_object), value)
+                if result_dct != value:
+                    result_obj = dacite.from_dict(name_object, result_dct, dacite.Config(check_types=False))
+                else:
+                    result_obj = result_dct
                 # if (name_object != type(result_dct)) and ((not is_dataclass(pathing_object)) or (isinstance(result_dct, dict))):
                 #     result_obj = dacite.from_dict(name_object, result_dct)
                 # else:

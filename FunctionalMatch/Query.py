@@ -46,27 +46,29 @@ class Query:
             return test, []  # Rationale: no outcome is available, if the test is false
         results = []
 
-        ## Grouping the outcome list by root objects
+        ## Grouping the outcome list by root objects (info.target_id) and result id (idx)
         # q = self.select.matching_obj_vars
         grouped_results = defaultdict(list)
         for idx, (_, match_preserve_info) in enumerate(outcome_list):
             for x, info in match_preserve_info.items():
-                grouped_results[info.target_id].append(MatchMemo2(len(info.jsonpath.split(".")), idx, int(x[1:]), info.target_id, info.jsonpath))
+                grouped_results[(info.target_id, idx)].append(MatchMemo2(len(info.jsonpath.split(".")), idx, int(x[1:]), info.target_id, info.jsonpath))
 
         if isinstance(self.as_, RewriteAs):
             for key in grouped_results:
+                root_objects, result_id = key
                 grouped_results[key] = sorted(grouped_results[key], reverse=not self.as_.isShallow, key=lambda x: x.depth)
 
             ## Retrieving the original matched value before applying any changes to the data, according to the jpath extracted while matching the object
             orig = dict()
-            for j in grouped_results:
+            for key in grouped_results:
+                root_objects, result_id = key
                 relevant_paths = set()
-                for match_memo in grouped_results[j]:
+                for match_memo in grouped_results[key]:
                     dollar_i = match_memo.query_id
                     pi = match_memo.json_path
                     relevant_paths.add(pi)
                 from FunctionalMatch.PropositionalLogic import jpath_interpret
-                orig[j] = {path: jpath_interpret(obj[j], path) for path in relevant_paths }
+                orig[key] = {path: jpath_interpret(obj[root_objects], path) for path in relevant_paths }
 
             ## Applying the first rewriting process, independent of the object of choice, and applying all the changes
             ## as they were rows. Not considering the nested nature of the data
@@ -80,18 +82,19 @@ class Query:
 
             from FunctionalMatch.example.parmenides.Formulae import FUnaryPredicate
             ## Now, I am updating each object j, recursively, according to the dictionary entry.
-            for j in grouped_results:
-                curr_obj = obj[j]
-                for action in grouped_results[j]:
-                    assert action.target_id == j
+            for key in grouped_results:
+                root_objects, result_id = key
+                curr_obj = obj[root_objects]
+                for action in grouped_results[key]:
+                    assert action.target_id == root_objects
                     dct = rewritten[action.result_idx]
                     dollar_i = f"${action.query_id}"
                     assert dollar_i in dct
                     dollar_i_obj = dct[dollar_i]
                     j_pi = jpath_interpret(curr_obj, action.json_path)
-                    assert action.json_path in orig[j]
-                    assert orig[j][action.json_path] is not None
-                    if j_pi != orig[j][action.json_path]:
+                    assert action.json_path in orig[key]
+                    assert orig[key][action.json_path] is not None
+                    if j_pi != orig[key][action.json_path]:
                         # If by effect of any other previous change the values that I am getting do not match anymore with
                         # the previous ones, then I am quitting
                         break
