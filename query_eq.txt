@@ -15,6 +15,7 @@ import "addAdjective"                         in-module "FunctionalMatch.example
 import "addSpecification"                     in-module "FunctionalMatch.example.parmenides.queries"
 import "getIngoingNodes"                      in-module "FunctionalMatch.example.parmenides.queries"
 import "dropCopula"                           in-module "FunctionalMatch.example.parmenides.queries"
+import "neitherNegatedNorNone"                in-module "FunctionalMatch.example.parmenides.queries"
 
 
 // query #3: If x has a property y which is an adjective, then x exists with such a property
@@ -60,7 +61,7 @@ nested match        FUnaryPredicate ( "be",  var(arg) , var(score), var(props)  
 nested match   FBinaryPredicate ( "have", var(src), var(dst) , var(score), var(props) )
        replace var(x) with  jsonpath "$0:$.src.name"
        where (call "nonEmptyMatch" with variable : "x") && (call "isOfType" with variable : "x" type : "LOC") || (call "isOfType" with variable : "x" type : "GPE")
-       as   FUnaryPredicate ( "be" ,  ( "addProperty" ( var(dst) ) with key : "SPACE" value : var(src) )  , var(score), var(props) )
+       as   FUnaryPredicate ( "be" ,   var(dst)   , var(score), ( "addProperty" (var(props)) with key : "SPACE" value : var(src) ) )
        ;
 
 
@@ -131,23 +132,25 @@ nested match FUnaryPredicate ("be", FNot (var(arg)), var(score), var(props) )
 
 // query 22: Extracting negation from the argument to the entire sentence (have)
 nested match FBinaryPredicate ( "have", FNot (var(src)), var(dst) , var(score), var(props) )
-       extend-with "extractProperties" with from : "$0" field : "SPACE" result : "yvar"
        as FNot (  FBinaryPredicate ( "have",  var(src), var(dst) , var(score), var(props) ) )
 ;
 
 // query 23: Extracting negation from the argument to the entire sentence (have)
 nested match FBinaryPredicate ( "have", var(src), FNot (var(dst)), var(score), var(props) )
-       extend-with "extractProperties" with from : "$0" field : "SPACE" result : "yvar"
        as FNot (  FBinaryPredicate ( "have",  var(src), var(dst) , var(score), var(props) ) )
 ;
 
+
+
 // query 24: Extracting be from have target
 nested match FBinaryPredicate ( _, _, var(dst), var(score), var(props) )
+       where (call "neitherNegatedNorNone" with variable : "src")
        as (  FUnaryPredicate ( "be",  var(dst) , var(score), ( "removeFromProperties" ( var(props) ) with key : "AIM_OBJECTIVE" ) ) )
 ;
 
 // query 25: Extracting be from have target
 nested match FBinaryPredicate ( _, var(src), _, var(score), var(props) )
+       where (call "neitherNegatedNorNone" with variable : "src")
        as (  FUnaryPredicate ( "be",  var(src) , var(score), ( "removeFromProperties" ( var(props) ) with key : "AIM_OBJECTIVE" )  ) )
 ;
 

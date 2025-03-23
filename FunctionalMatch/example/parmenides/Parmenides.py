@@ -447,6 +447,9 @@ class Parmenides(RDFGraph):
             s.add(str(x.dst))
         return s
 
+    def hasTypedObject(self, src):
+        return len(self.typeOf(src)) > 0
+
     def typeOf(self, src):
         knows_query = """
          SELECT DISTINCT ?dst 

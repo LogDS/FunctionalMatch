@@ -98,6 +98,14 @@ class CountingDictionary:
             self.counter[x] = len(self.counter)
         return self.counter[x]
 
+    def add_with_wasPresent(self, x):
+        wasPresent = True
+        if x not in self.counter:
+            self.reverseConstituent[len(self.counter)] = x
+            self.counter[x] = len(self.counter)
+            wasPresent = False
+        return self.counter[x], wasPresent
+
     def getAllObjects(self):
         return list(map(self.fromId, range(len(self.counter))))
 
@@ -105,12 +113,31 @@ class CountingDictionary:
         return len(self.counter)
 
     def fromId(self, x):
+        if int(x) not in self.reverseConstituent:
+            return None
         return self.reverseConstituent[int(x)]
 
     def contains(self, x):
         if x not in self.counter:
             return -1
         return self.counter[x]
+
+    @staticmethod
+    def load(ke_file):
+        import os
+        if os.path.exists(ke_file):
+            with open(ke_file, "rb") as f:
+                import pickle
+                constituents = pickle.load(f)
+                assert isinstance(constituents, CountingDictionary)
+                return constituents
+        else:
+            return CountingDictionary()
+
+    def dump(self, ke_file):
+        with open(ke_file, "wb") as f:
+            import pickle
+            pickle.dump(self, f)
 
 
 class FrozenDict(collections.abc.Mapping):

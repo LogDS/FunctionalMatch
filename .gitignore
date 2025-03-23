@@ -175,3 +175,10 @@ cython_debug/
 /data/cache/
 /report.html
 /report_debug.html
+/report_debug_dir/
+/report_debug.dot
+/report_debug.pdf
+/report_sentences.html
+*.pdf
+*.html
+*.dot

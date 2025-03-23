@@ -18,6 +18,19 @@ def latex_rendering(strx, mathjax=True):
     # img["style"] = "width: 10vw; min-width: 50px;"
     return img
 
+def latex_rendering_to_raster_file(strx, file):
+    latex_eq = latextools.render_snippet(
+        r'$' + str(strx) + '$',
+        commands=[latextools.cmd.all_math])
+    latex_eq.as_svg().save(file+".svg")
+    # from drawsvg.raster import delay_import_cairo, Raster
+    # cairosvg = delay_import_cairo()
+    # from cairosvg.surface import Surface
+    # Surface.device_units_per_user_units = 20
+    # cairosvg.svg2png(bytestring=latex_eq.as_svg().content, write_to=file+".png", dpi=1200)
+    # return Raster(None, png_file=file+".png")
+    latex_eq.rasterize(file+".png")
+
 def latex_formula_rendering(formula:Formula, mathjax=True):
     return latex_rendering(str(formula), mathjax=True)
 

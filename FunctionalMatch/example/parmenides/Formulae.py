@@ -58,6 +58,7 @@ class FVariable:
     cop: Optional['Formula'] = None
     id: Optional[int] = None
     properties: frozenset = field(default_factory=lambda: frozenset())
+    spec_negation:bool = False
     meta: str = field(default_factory=lambda: "FVariable")
     # matched: bool = field(default_factory=lambda: False)
 
@@ -89,7 +90,8 @@ class FVariable:
             name = "\\textsf{" + name + "}"
         assert isinstance(self.specification, str) or (self.specification is None)
         if (self.specification is not None) and len(str(self.specification))>0:
-            name += (" [\\textup{of}] \\textit{" + str(self.specification)) + "}"
+            negation = "\\neg " if self.spec_negation else ""
+            name += (" [\\textup{of}] " + negation + "\\textit{" + str(self.specification)) + "}"
             name = "\\left[" + name + "\\right]^{\\texttt{" + str(self.id) + "}}"
         else:
             name = "{" + name + "}^{\\texttt{" + str(self.id) + "}}"
@@ -98,6 +100,10 @@ class FVariable:
     def add_specification(self, value):
         return FVariable(self.name, self.type, value, self.cop, self.id, self.properties)
 
+def is_selfstanding_variable(f: 'Formula'):
+    if not isinstance(f, FVariable):
+        return False
+    return ((f.cop is None) or (isinstance(f.cop, str) and len(f.cop) == 0)) and ((f.properties is None) or (len(f.properties) == 0))
 
 @dataclass(order=True, frozen=True, eq=True)
 class FUnaryPredicate:
@@ -254,21 +260,22 @@ def formula_from_dict(f: Union[dict, str]):
     if meta == "FAnd":
         return FAnd(args=tuple(map(formula_from_dict, f["args"])))
     if meta == "FVariable":
+        spec_negation = bool(f["spec_negation"]) if "spec_negation" in f and f["spec_negation"] is not None else False
         name = str(f["name"]) if "name" in f and f["name"] is not None else None
         type = str(f["type"]) if "name" in f and f["type"] is not None else None
-        id = int(f["id"]) if "id" in f and f["id"] is not None else -1
+        id = None #int(f["id"]) if "id" in f and f["id"] is not None else -1
         specification = formula_from_dict(f["specification"]) if "specification" in f and f["specification"] is not None else None
         cop = formula_from_dict(f["cop"]) if "cop" in f else None
-        return FVariable(name=name, type=type, specification=specification, cop=cop, id=id)
+        return FVariable(name=name, type=type, specification=specification, cop=cop, id=id, spec_negation=spec_negation)
     if meta == "FUnaryPredicate":
         rel = str(f["rel"]) if "rel" in f and f["rel"] is not None else ""
         arg = formula_from_dict(f["arg"]) if "arg" in f and f["arg"] is not None else None
         score = float(f["score"]) if "score" in f else 1.0
-        properties = defaultdict(list)
+        properties = defaultdict(set)
         if "properties" in f:
             for k, v in f["properties"].items():
                 for x in v:
-                    properties[k].append(formula_from_dict(x))
+                    properties[k].add(formula_from_dict(x))
         properties = {k: tuple(v) for k, v in properties.items()}
         return FUnaryPredicate(rel, arg, score, frozenset(properties.items()))
     if meta == "FBinaryPredicate":
@@ -276,10 +283,10 @@ def formula_from_dict(f: Union[dict, str]):
         src = formula_from_dict(f["src"]) if "src" in f else None
         dst = formula_from_dict(f["dst"]) if "dst" in f else None
         score = float(f["score"]) if "score" in f else 1.0
-        properties = defaultdict(list)
+        properties = defaultdict(set)
         if "properties" in f:
             for k, v in f["properties"].items():
                 for x in v:
-                    properties[k].append(formula_from_dict(x))
+                    properties[k].add(formula_from_dict(x))
         properties = {k: tuple(v) for k, v in properties.items()}
         return FBinaryPredicate(rel, src, dst, score, frozenset(properties.items()))

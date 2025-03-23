@@ -35,7 +35,7 @@ from FunctionalMatch.utils import FrozenDict
 #     else:
 #         return obj
 
-def replace_with_v2(d:List[Tuple], original:dict):
+def replace_with_v2(d:Tuple[Tuple], original:dict):
     assert isinstance(original, FrozenDict) or isinstance(original, dict)
     if isinstance(original, dict):
         original = FrozenDict.from_dictionary(original)
@@ -58,7 +58,7 @@ def replace_with_v2(d:List[Tuple], original:dict):
 
 @dataclass(frozen=True, order=True, eq=True)
 class ReplaceWith:
-    replacement: List[Tuple[Union[Variable,JSONPath],
+    replacement: Tuple[Tuple[Union[Variable,JSONPath],
                             Union[Variable,JSONPath,object]]]
 
     def __call__(self, obj: FrozenDict) -> FrozenDict:
@@ -68,7 +68,7 @@ class ReplaceWith:
 @dataclass(frozen=True, order=True, eq=True)
 class RewriteAs:
     isShallow: bool
-    replacement: List[Tuple[Union[Variable,JSONPath], Union[Variable,JSONPath,object]]]
+    replacement: Tuple[Tuple[Union[Variable,JSONPath], Union[Variable,JSONPath,object]]]
 
 
 

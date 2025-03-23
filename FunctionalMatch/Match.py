@@ -10,7 +10,7 @@ __status__ = "Production"
 from curses.ascii import isdigit
 # from collections import defaultdict
 from dataclasses import dataclass, is_dataclass, fields
-from typing import Optional, List
+from typing import Optional, List, Tuple
 
 import dacite
 
@@ -108,10 +108,10 @@ def doesContainExternalMatch(obj):
 
 @dataclass(eq=True, order=True, frozen=True)
 class Match:
-    query: list
+    query: tuple
     nested: bool
     where: Optional[Prop]
-    extension: List[ExternalMatchByExtesion]
+    extension: Tuple[ExternalMatchByExtesion]
     replacement: ReplaceWith
 
     @property
@@ -244,7 +244,7 @@ def value_extraction_for_rewriting(dictionary, value):
 
 def rewrite_as(dictionary:FrozenDict, rewriting_rules):
     assert isinstance(dictionary, FrozenDict)
-    assert isinstance(rewriting_rules, list)
+    assert isinstance(rewriting_rules, tuple)
     for key, value in rewriting_rules:
         if isinstance(key, str):
             key = var(key)

@@ -1,5 +1,6 @@
 import os
 import pickle
+import subprocess
 from collections import defaultdict
 from typing import List
 
@@ -8,8 +9,25 @@ from functools import reduce
 
 from FunctionalMatch.example.LaSSI.eFOLsemantics.ExpandConstituents import ExpandConstituents
 from FunctionalMatch.example.parmenides.Formulae import Formula
-from FunctionalMatch.example.parmenides.formula_utils import latex_rendering
+from FunctionalMatch.example.parmenides.formula_utils import latex_rendering, latex_rendering_to_raster_file
 from FunctionalMatch.utils import CountingDictionary
+
+def png_node(obj, key, dir, nodes_map,fillColor=None):
+    import pydot
+    local_file = os.path.join(dir, key + ".svg")
+    local_file_exless = os.path.join(dir, key )
+    if not os.path.exists(local_file_exless):
+        latex_rendering_to_raster_file(obj, local_file_exless)
+    d = {"image": local_file,
+     "label": "",
+     "width": "3cm",
+     "height": "1cm",
+     "shape": "box"}
+    if fillColor is not None:
+        d["fillcolor"] = fillColor
+        d["style"] = "filled"
+    nodes_map[key] = pydot.Node(key, **d)
+    return nodes_map
 
 def with_variables_from(f, l, minimal_constituents: CountingDictionary, fn, selection=False):
     from FunctionalMatch.example.parmenides.formula_utils import semantic
@@ -52,12 +70,21 @@ class TabularCWASemantics:
                 self.minimal_constituent_dict[sentence_id].add(self.minimal_constituents.add(x))
 
         d_folder = os.path.join(self.cache_folder, "_d.pickle")
-        cd_folder = os.path.join(self.cache_folder, "_cd.pickle")
         with open(d_folder, "wb") as p:
             pickle.dump(self.minimal_constituent_dict, p, protocol=pickle.HIGHEST_PROTOCOL)
+        cd_folder = os.path.join(self.cache_folder, "_cd.pickle")
         with open(cd_folder, "wb") as p:
             pickle.dump(self.minimal_constituents, p, protocol=pickle.HIGHEST_PROTOCOL)
         self.ec = ExpandConstituents(self.cache_folder, self.minimal_constituents.getAllObjects())
+
+    def getIDXGraph(self):
+        return self.ec.getIDXGraph()
+
+    def getConstituentFromIDX(self, idx):
+        return self.ec.getConstituentFromIDX(idx)
+
+    def getConstituentIDX(self, obj):
+        return self.ec.getConstituentIDX(obj)
 
     def getImplExpansions(self, minimal_constituent_idx):
         return self.ec.getImplExpansions(minimal_constituent_idx)
@@ -65,11 +92,11 @@ class TabularCWASemantics:
     def getEqExpansions(self, minimal_constituent_idx):
         return self.ec.getEqExpansions(minimal_constituent_idx)
 
-    def getImplExpansionExplanation(self, minimal_constituent_idx, rw=None):
-        return self.ec.getImplExpansionExplanation(minimal_constituent_idx, rw)
+    def getImplExpansionExplanation(self, minimal_constituent_idx):
+        return self.ec.getImplExpansionExplanation(minimal_constituent_idx)
 
-    def getEqExpansionExplanation(self, minimal_constituent_idx, rw=None):
-        return self.ec.getEqExpansionExplanation(minimal_constituent_idx, rw)
+    def getEqExpansionExplanation(self, minimal_constituent_idx):
+        return self.ec.getEqExpansionExplanation(minimal_constituent_idx)
 
     def __call__(self, i, j):
         return self.get_straightforward_id_similarity(self.sentence_to_id[i], self.sentence_to_id[j])
@@ -117,7 +144,13 @@ class TabularCWASemantics:
 
     def buildReport(self, file, mathJax = True):
         from bs4 import Tag, BeautifulSoup
+        import pydot
         from FunctionalMatch.example.parmenides.formula_utils import latex_formula_rendering
+
+        from pathlib import Path
+        Path(file+"_dir").mkdir(parents=True, exist_ok=True)
+        graph = pydot.Dot("my_graph", graph_type="digraph", rankdir="LR")
+        nodes_map = dict()
         html = Tag(name="html")
         if mathJax:
             mathjax = """
@@ -133,7 +166,9 @@ class TabularCWASemantics:
     </script>
     <script id="MathJax-script" async
       src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
-    </script>"""
+    </script><script src="//d3js.org/d3.v7.min.js"></script>
+<script src="https://unpkg.com/@hpcc-js/wasm@2.20.0/dist/graphviz.umd.js"></script>
+<script src="https://unpkg.com/d3-graphviz@5.6.0/build/d3-graphviz.js"></script>"""
             parser = BeautifulSoup(mathjax)
             for x in list(parser.children):
                 html.append(x)
@@ -143,9 +178,12 @@ class TabularCWASemantics:
         p_.append("Constutents DB")
         body.append(p_)
         ol = Tag(name="ol")
-        constituents = self.minimal_constituents.getAllObjects()
-        for idx, x in enumerate(constituents):
+        initial_constituents = self.minimal_constituents.getAllObjects()
+        # constituent_id = CountingDictionary()
+
+        for idx_orig, x in enumerate(initial_constituents):
             li = Tag(name="li")
+            idx = self.getConstituentIDX(x)
             li["id"] = f"constituent{idx}"
             li.append(latex_formula_rendering(x, mathJax))
 
@@ -153,16 +191,19 @@ class TabularCWASemantics:
             pp.append("Eq Rewriting:")
             li.append(pp)
             ool = Tag(name="ol")
-            eqex = self.getEqExpansions(idx)
-            meqex = {x:idx2+1 for idx2, x in enumerate(eqex)}
-            fmeqex = self.getEqExpansionExplanation(idx, meqex)
-            for x in eqex:
+            # eqex = self.getEqExpansions(idx)
+            # meqex = {x:idx2+1 for idx2, x in enumerate(eqex)}
+            fmeqex = self.getEqExpansionExplanation(idx_orig)
+            for idx_ in fmeqex:
                 lli = Tag(name="li")
+                lli["value"] = idx_
+                x = self.ec.getIthExpandedConstituent(idx_)
                 lli.append(latex_formula_rendering(x, mathJax))
                 uuul = Tag(name="ul")
-                for rule in fmeqex[x]:
+                for (label, rule),dst in fmeqex[idx_]:
+                    assert label == "eqR"
                     llli = Tag(name="li")
-                    llli.append(latex_rendering(rule))
+                    llli.append(str(idx_)+latex_rendering(f"\\xrightarrow{{eq {rule}}}")+str(dst))
                     uuul.append(llli)
                 lli.append(uuul)
                 ool.append(lli)
@@ -171,17 +212,20 @@ class TabularCWASemantics:
             pp = Tag(name="p")
             pp.append("Impl Rewriting:")
             li.append(pp)
-            imex = self.getImplExpansions(idx)
-            mimex = {x:idx2+1 for idx2, x in enumerate(imex)}
-            fmimex = self.getImplExpansionExplanation(idx, mimex)
+            # imex = self.getImplExpansions(idx)
+            # mimex = {x:idx2+1 for idx2, x in enumerate(imex)}
+            fmimex = self.getImplExpansionExplanation(idx_orig)
             ool = Tag(name="ol")
-            for x in imex:
+            for idx_ in fmimex:
                 lli = Tag(name="li")
+                lli["value"] = idx_
+                x = self.ec.getIthExpandedConstituent(idx_)
                 lli.append(latex_formula_rendering(x, mathJax))
                 uuul = Tag(name="ul")
-                for rule in fmimex[x]:
+                for (label, rule), dst in fmimex[idx_]:
+                    assert label == "implR"
                     llli = Tag(name="li")
-                    llli.append(latex_rendering(rule))
+                    llli.append(str(idx_)+latex_rendering(f"\\xrightarrow{{impl {rule}}}")+str(dst))
                     uuul.append(llli)
                 lli.append(uuul)
                 ool.append(lli)
@@ -189,6 +233,7 @@ class TabularCWASemantics:
 
             ol.append(li)
         body.append(ol)
+        print("Finished to write the rules")
 
         p_ = Tag(name="h1")
         p_.append("Sentences DB")
@@ -200,6 +245,10 @@ class TabularCWASemantics:
             minimal_constituents = self.minimal_constituent_dict[i]
             ref = f"Sentence{i}"
             Sentence = f"Sentence #{i}"
+            print(ref)
+            nodes_map[ref] = pydot.Node(ref, shape="circle",fillcolor="lightyellow",style="filled")
+            graph.add_node(nodes_map[ref])
+
 
             lli = Tag(name="li")
             lla = Tag(name="a")
@@ -219,26 +268,80 @@ class TabularCWASemantics:
             p1.append("Logic form: ")
             p1.append(latex_formula_rendering(sentence, mathJax))
             body.append(p1)
+            nodes_map = png_node(sentence, ref+"eq", file+"_dir", nodes_map)
+            graph.add_node(nodes_map[ref+"eq"])
+            graph.add_edge(pydot.Edge(ref, ref+"eq", label="hasFormula"))
 
             p2 = Tag(name="p")
             p2.append("Minimal Constituents:")
             body.append(p2)
             ol = Tag(name="ul")
             for x_idx in minimal_constituents:
+                obj = initial_constituents[x_idx]
+                global_x_idx = self.getConstituentIDX(obj)
                 li = Tag(name="li")
+                li["value"] = global_x_idx
                 ali = Tag(name="a")
-                ali["href"] = f"#constituent{x_idx}"
-                ali.append(str(x_idx))
-                ali.append(latex_formula_rendering(constituents[x_idx], mathJax))
+                ali["href"] = f"#constituent{global_x_idx}"
+                ali.append(str(global_x_idx))
+                ali.append(latex_formula_rendering(obj, mathJax))
+                nodes_map = png_node(initial_constituents[x_idx], f"constituent{global_x_idx}", file + "_dir", nodes_map, fillColor="lightblue")
+                graph.add_node(nodes_map[f"constituent{global_x_idx}"])
+                graph.add_edge(pydot.Edge(ref, f"constituent{global_x_idx}", label="hasConstituent"))
                 li.append(ali)
                 ol.append(li)
-
-
             body.append(ol)
         html.append(body)
         html.decode()
 
-        with open(file, "w") as f:
-            f.write(str(html))
+        print("Printing html...")
+        with open(file+".html", "w") as f:
+            f.write(html.prettify())
+        print("... done")
+
+        graphIDX = self.getIDXGraph()
+        for idx, ls in graphIDX.items():
+            print(f"Node {idx}")
+            label = f"constituent{idx}"
+            if label not in nodes_map:
+                src_obj = self.getConstituentFromIDX(idx)
+                nodes_map = png_node(src_obj, label, file + "_dir", nodes_map)
+                graph.add_node(nodes_map[label])
+            # else:
+            #     src_obj = nodes_map[label]
+            for (ruleId, dstIdx) in ls:
+                labelDst = f"constituent{dstIdx}"
+                if labelDst not in nodes_map:
+                    dst_obj = self.getConstituentFromIDX(dstIdx)
+                    nodes_map = png_node(dst_obj, labelDst, file + "_dir", nodes_map)
+                    graph.add_node(nodes_map[labelDst])
+                # else:
+                #     dst_obj = nodes_map[labelDst]
+                graph.add_edge(pydot.Edge(label, labelDst, label=str(ruleId)))
+        print("Graph finalised")
+
+        with open(file+".dot", "w") as f:
+            # As a string:
+            output_raw_dot = graph.to_string()
+            from FunctionalMatch.example.utils.doc2tex import convert_graph
+            # tex_graph = convert_graph(output_raw_dot)
+            f.write(output_raw_dot)
+        print("Dot written")
+
+        graph.write(file + ".pdf", format="pdf")
+        print("PDF written")
+        # with open(file+".dot", "w") as f:
+        #     # As a string:
+        #     output_raw_dot = graph.to_string()
+        #     from FunctionalMatch.example.utils.doc2tex import convert_graph
+        #     # tex_graph = convert_graph(output_raw_dot)
+        #     f.write(output_raw_dot)
+        #     # Or, save it as a DOT-file:
+        #     # import pdflatex
+        #     # bin_graph = str.encode(tex_graph)
+        #     # pdfl = pdflatex.PDFLaTeX.from_binarystring(bin_graph, file)
+        #     # pdfl.params["-output-directory"] = os.getcwd()
+        #     # pdfl.create_pdf(keep_pdf_file=True)
+        #     # fp = subprocess.run(["pdflatex", file+".tex"])
 
 

@@ -4,6 +4,7 @@ from collections import defaultdict
 
 from FunctionalMatch.example.LaSSI.eFOLsemantics.Enums import PairwiseCases
 from FunctionalMatch.example.LaSSI.eFOLsemantics.ModelSearch import ModelSearch, ModelSearchBasis
+from FunctionalMatch.example.LaSSI.eFOLsemantics.TBoxReasoning import TBoxReasoningSingleton
 from FunctionalMatch.example.parmenides.Formulae import FVariable, FNot, FBinaryPredicate, FUnaryPredicate
 from FunctionalMatch.example.parmenides.Parmenides import CasusHappening, Parmenides, ParmenidesSingleton
 
@@ -361,8 +362,9 @@ class ExpandConstituents:
         _ic = os.path.join(cache_folder, "_ic.pickle")
         _eed = os.path.join(cache_folder, "_eed.pickle")
         _ec = os.path.join(cache_folder, "_ec.pickle")
+        _exp = TBoxReasoningSingleton.get_ke_file_name()
 
-        if (os.path.exists(_ied) and os.path.exists(_ic) and os.path.exists(_eed) and os.path.exists(_ec)):
+        if (os.path.exists(_ied) and os.path.exists(_ic) and os.path.exists(_eed) and os.path.exists(_ec) and os.path.exists(_exp)):
             with open(_ied, "rb") as f:
                 self.impl_expansion_dictionary = pickle.load(f)
             with open(_ic, "rb") as f:
@@ -386,11 +388,12 @@ class ExpandConstituents:
 
             print("Expanding the constituents...")
             # self.outcome_implication_dictionary =
+            instantiate_rules(self.constituents, self.eq_expansion_dictionary, self.eq_constituents,
+                              False)
             instantiate_rules(self.constituents, self.impl_expansion_dictionary, self.impl_constituents,
                               True)
             # self.outcome_eq_dictionary =
-            instantiate_rules(self.constituents, self.eq_expansion_dictionary, self.eq_constituents,
-                              False)
+
             with open(_ied, "wb") as f:
                 pickle.dump(self.impl_expansion_dictionary, f, protocol=pickle.HIGHEST_PROTOCOL)
             with open(_ic, "wb") as f:
@@ -417,35 +420,25 @@ class ExpandConstituents:
     def getEqExpansions(self, idx):
         return self.rhsOrigDict[idx].all() if idx in self.lhsOrigDict else []
 
-    def getImplExpansionExplanation(self, idx, rw=None):
-        constituent = self.constituents[idx]
-        assert idx == self.inv_idx[constituent]
-        # result = []
-        map = self.impl_expansion_dictionary[constituent]
-        neumap = defaultdict(list)
-        for k, ls in map.items():
-            for (ruleId, target) in ls:
-                kk = rw[k] if rw is not None else k
-                tk = rw[target] if rw is not None else target
-                r = str(kk)+"\\xrightarrow{"+str(ruleId+1)+"}"+str(tk)
-                neumap[target].append(r)
-                # result.append(r)
-        return neumap
+    def getConstituentIDX(self, ith):
+        from FunctionalMatch.example.LaSSI.eFOLsemantics.TBoxReasoning import TBoxReasoningSingleton
+        return TBoxReasoningSingleton.getConstituentIdx(ith)
 
-    def getEqExpansionExplanation(self, idx, rw=None):
+    def getIthExpandedConstituent(self, ith):
+        from FunctionalMatch.example.LaSSI.eFOLsemantics.TBoxReasoning import TBoxReasoningSingleton
+        return TBoxReasoningSingleton.getConstituentFromIdx(ith)
+
+    def getImplExpansionExplanation(self, idx):
         constituent = self.constituents[idx]
         assert idx == self.inv_idx[constituent]
-        # result = []
-        map = self.eq_expansion_dictionary[constituent]
-        neumap = defaultdict(list)
-        for k, ls in map.items():
-            for (ruleId, target) in ls:
-                kk = rw[k] if rw is not None else k
-                tk = rw[target] if rw is not None else target
-                r = str(kk)+"\\xrightarrow{"+str(ruleId+1)+"}"+str(tk)
-                neumap[target].append(r)
-                # result.append(r)
-        return neumap
+        from FunctionalMatch.example.LaSSI.eFOLsemantics.TBoxReasoning import TBoxReasoningSingleton
+        return TBoxReasoningSingleton.subGraphImpl(constituent)
+
+    def getEqExpansionExplanation(self, idx):
+        constituent = self.constituents[idx]
+        assert idx == self.inv_idx[constituent]
+        from FunctionalMatch.example.LaSSI.eFOLsemantics.TBoxReasoning import TBoxReasoningSingleton
+        return TBoxReasoningSingleton.subGraphEq(constituent)
 
     def determine(self, i: int, j: int):
         if (i == j):
@@ -470,3 +463,11 @@ class ExpandConstituents:
 
         self.result_cache[(i, j)] = val
         return val
+
+    def getIDXGraph(self):
+        from FunctionalMatch.example.LaSSI.eFOLsemantics.TBoxReasoning import TBoxReasoningSingleton
+        return TBoxReasoningSingleton.getIDXGraph()
+
+    def getConstituentFromIDX(self, idx):
+        from FunctionalMatch.example.LaSSI.eFOLsemantics.TBoxReasoning import TBoxReasoningSingleton
+        return TBoxReasoningSingleton.getConstituentFromIdx(idx)

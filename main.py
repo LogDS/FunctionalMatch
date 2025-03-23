@@ -1,5 +1,6 @@
 import logging
 
+from FunctionalMatch.example.LaSSI.eFOLsemantics.TBoxReasoning import KnowledgeExpansion, non_redundant_constituents
 from FunctionalMatch.example.LaSSI.eFOLsemantics.TabularCWASemantics import TabularCWASemantics
 from FunctionalMatch.example.parmenides.Formulae import FUnaryPredicate, FVariable, FBinaryPredicate, formula_from_dict
 from FunctionalMatch.language.LanguageMainPoint import parse_query
@@ -54,13 +55,15 @@ def tst_query(sentences = None):
     # TBoxReasoningSingleton.init("/home/giacomo/PyCharmProjects/FunctionalMatch/query_test.txt",
     #                             "/home/giacomo/PyCharmProjects/FunctionalMatch/query_test.txt")
     TBoxReasoningSingleton.init("/home/giacomo/PyCharmProjects/FunctionalMatch/query_impl.txt",
-                                "/home/giacomo/PyCharmProjects/FunctionalMatch/query_eq.txt")
+                                "/home/giacomo/PyCharmProjects/FunctionalMatch/query_eq.txt",
+                                "/home/giacomo/PyCharmProjects/FunctionalMatch/data/cache/_kexp.pickle")
 
     print("Initializing all the data and performing the expansion")
     cwa = TabularCWASemantics(sentences, "/home/giacomo/PyCharmProjects/FunctionalMatch/data/cache")
 
     print("Building Report!")
-    cwa.buildReport("/home/giacomo/PyCharmProjects/FunctionalMatch/report_debug.html")
+    TBoxReasoningSingleton.dump()
+    cwa.buildReport("/home/giacomo/PyCharmProjects/FunctionalMatch/report_debug")
 
     # l1 = Node.leaf(1)
     # l2 = Node.leaf(2)
@@ -98,6 +101,7 @@ def simpler_test():
     ncl = FVariable("Newcastle", "LOC", None, None, 31)
     becl = FUnaryPredicate("be", adj3, -1, frozenset({"SPACE": ncl}.items()))
     have2 = FBinaryPredicate("have", ncl, adj4, 1.0, frozenset())
+    Sentence = load_paper_sentences()[13]
 
     ## INIT PARMENIDES
     import os
@@ -107,11 +111,12 @@ def simpler_test():
     ParmenidesSingleton.instance()
     ParmenidesSingleton.init("/home/giacomo/PyCharmProjects/FunctionalMatch/data/cache", "giacomo", "omocaig",
                              "localhost", 5432, False, parmenides)
-
     queries = parse_query("/home/giacomo/PyCharmProjects/FunctionalMatch/query_impl.txt")
+    ke = KnowledgeExpansion("/home/giacomo/PyCharmProjects/FunctionalMatch/data/cache/_kexp.pickle")
+    ke.expand(Sentence, queries, "implDebug", filter=non_redundant_constituents)
 
-    from FunctionalMatch.example.LaSSI.eFOLsemantics.TBoxReasoning import knowledge_expansion
-    for k,v in knowledge_expansion(have2, queries).items():
+    # from FunctionalMatch.example.LaSSI.eFOLsemantics.TBoxReasoning import knowledge_expansion
+    for k,v in ke.fullGraph().items():
         for idx, element in v:
             print(element)
 

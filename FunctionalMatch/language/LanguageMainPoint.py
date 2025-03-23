@@ -126,7 +126,7 @@ class MatchingLanguageVisitor2(MatchingLanguageVisitor):
         if ctx.WHERE() is not None:
             where = self.visit(ctx.prop())
         from FunctionalMatch.Match import Match
-        query =  Match(q, nested, where, extension, ReplaceWith(replacements))
+        query =  Match(tuple(q), nested, where, tuple(extension), ReplaceWith(tuple(replacements)))
         as_ = None
         if ctx.rewriting is not None:
             from FunctionalMatch.ReturningFirstObjects import Invent
@@ -151,7 +151,7 @@ class MatchingLanguageVisitor2(MatchingLanguageVisitor):
             obj = self.visit(child)
             if obj is not None:
                 result.append(obj)
-        return RewriteAs(shallow, result)
+        return RewriteAs(shallow, tuple(result))
 
     def visitRewrite(self, ctx: MatchingLanguageParser.RewriteContext):
         if (ctx is None):

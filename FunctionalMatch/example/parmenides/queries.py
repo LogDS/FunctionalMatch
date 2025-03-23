@@ -1,5 +1,7 @@
+from curses.ascii import isdigit
+
 from FunctionalMatch import JSONPath
-from FunctionalMatch.example.parmenides.Formulae import FVariable, FUnaryPredicate, FBinaryPredicate
+from FunctionalMatch.example.parmenides.Formulae import FVariable, FUnaryPredicate, FBinaryPredicate, FNot
 from FunctionalMatch.example.parmenides.Parmenides import ParmenidesSingleton
 
 ## TODO: use single_edge_src_multipoint to retrive the target nodes given the name, the adjective, and the relationship
@@ -191,6 +193,27 @@ def isOfType(kwargs):
     for _ in ParmenidesSingleton.get().isA(adjForm, type_):
         val += 1
     return val > 0
+
+
+def notNegated(kwargs):
+    var = kwargs.get("variable", None)
+    if var is None:
+        return True
+    assert isinstance(var, str)
+    adjForm = kwargs.get(var)
+    if adjForm is None:
+        return True
+    return not isinstance(adjForm, FNot)
+
+def neitherNegatedNorNone(kwargs):
+    var = kwargs.get("variable", None)
+    if var is None:
+        return False
+    assert isinstance(var, str)
+    adjForm = kwargs.get(var)
+    if adjForm is None:
+        return False
+    return (not isinstance(adjForm, FNot)) and ((not  hasattr(adjForm, "name")) or ((adjForm.name is not None) and ((not adjForm.name.startswith("?")) or (not adjForm.name[1:].isdigit()))))
 
 def nonEmptyMatch(kwargs):
     var = kwargs.get("variable", None)
