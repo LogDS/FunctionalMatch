@@ -16,31 +16,31 @@ import dacite
 
 from FunctionalMatch.utils import FrozenDict
 
-def update_dataclass_rec(obj, jsonpath_expr, value):
-    from jsonpath_ng import Root, Child, Fields, Index
-    if isinstance(jsonpath_expr, Root):
-        return value
-    if isinstance(jsonpath_expr, Child):
-        for child in navigate_dataclass(obj, jsonpath_expr.left, True):
-            if child is not None:
-                update_dataclass_rec(child, jsonpath_expr.right, value)
-    if isinstance(jsonpath_expr, Fields):
-        for field in jsonpath_expr.fields:
-            if field == "*":
-                for field in fields(obj):
-                    setattr(obj, field.name, value)
-            else:
-                if field in obj.__dataclass_fields__ and (obj.__dataclass_fields__[field]._field_type.name == '_FIELD'):
-                    object.__setattr__(obj, field, value)
-    elif isinstance(jsonpath_expr, Index):
-        obj[jsonpath_expr.index] = value
-
-def update_dataclass(obj, jsonpath_expr, value):
-    t = type(obj)
-    cpy = copy.deepcopy(obj)
-    update_dataclass_rec(cpy, jsonpath_expr, value)
-
-    return cpy
+# def update_dataclass_rec(obj, jsonpath_expr, value):
+#     from jsonpath_ng import Root, Child, Fields, Index
+#     if isinstance(jsonpath_expr, Root):
+#         return value
+#     if isinstance(jsonpath_expr, Child):
+#         for child in navigate_dataclass(obj, jsonpath_expr.left, True):
+#             if child is not None:
+#                 update_dataclass_rec(child, jsonpath_expr.right, value)
+#     if isinstance(jsonpath_expr, Fields):
+#         for field in jsonpath_expr.fields:
+#             if field == "*":
+#                 for field in fields(obj):
+#                     setattr(obj, field.name, value)
+#             else:
+#                 if field in obj.__dataclass_fields__ and (obj.__dataclass_fields__[field]._field_type.name == '_FIELD'):
+#                     object.__setattr__(obj, field, value)
+#     elif isinstance(jsonpath_expr, Index):
+#         obj[jsonpath_expr.index] = value
+#
+# def update_dataclass(obj, jsonpath_expr, value):
+#     t = type(obj)
+#     cpy = copy.deepcopy(obj)
+#     update_dataclass_rec(cpy, jsonpath_expr, value)
+#
+#     return cpy
 
 def navigate_dataclass(obj, jsonpath_expr, isList=False):
     from jsonpath_ng import Root, Child, Fields, Index
@@ -58,12 +58,29 @@ def navigate_dataclass(obj, jsonpath_expr, isList=False):
         for field in jsonpath_expr.fields:
             if field == "*":
                 allFields = True
-                L.extend([getattr(obj, field.name) for field in  fields(obj)])
+                if is_dataclass(obj):
+                    L.extend([getattr(obj, field.name) for field in  fields(obj)])
+                else:
+                    try:
+                        dd = dict(obj)
+                    except:
+                        dd = None
+                    if dd is not None:
+                        for v in dd.values():
+                            L.append(v)
             else:
                 if hasattr(obj, field):
                     L.append(getattr(obj, field))
-                elif len(jsonpath_expr.fields) == 1:
-                    return None
+                else:
+                    try:
+                        dd = dict(obj)
+                    except:
+                        dd = None
+                    if dd is not None:
+                        if field in dd:
+                            L.append(dd[field])
+                    elif len(jsonpath_expr.fields) == 1:
+                        return None
         if (not isList) and ((not allFields) and len(L) == 1):
             return L[0]
         else:
@@ -76,12 +93,12 @@ def jpath_interpret(obj, path):
         return obj
     from jsonpath_ng import jsonpath, parse
     jsonpath_expr = parse(path)
-    L = [match.value for match in jsonpath_expr.find(asdict(obj))]
-    assert len(L)==1
-    L0_type = type(navigate_dataclass(obj, jsonpath_expr))
-    if is_dataclass(L0_type):
-        return dacite.from_dict(L0_type, L[0])
-    return L[0]
+    L0 = navigate_dataclass(obj, jsonpath_expr)
+    # L0_type = type(navigate_dataclass(obj, jsonpath_expr))
+    # assert len(L)==1
+    # if is_dataclass(L0_type):
+    #     return dacite.from_dict(L0_type, L[0])
+    return L0
 
 def jpath_update(obj, path, value):
     from jsonpath_ng import jsonpath, parse

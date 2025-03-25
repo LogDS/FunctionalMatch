@@ -17,9 +17,7 @@ import "getIngoingNodes"                      in-module "FunctionalMatch.example
 import "dropCopula"                           in-module "FunctionalMatch.example.parmenides.queries"
 
 // query 9BIS: If the nome/adjective pair is related to a given concept, then this can be grouped as one single variable and represent the relatedness as a RelatedTo
-nested match        FBinaryPredicate ( "have", var(src), ( FVariable (var(y), var(a) ,var(b),var(c),var(d),var(e)) ) , var(score), var(props) )
-       replace      var(n) with  jsonpath "$0:$.src.name"
-       extend-with  "getOutgoingNodes" with variable : "n"   result : "x"   rel : "isA",
-                    "getMultiwayAdjectivalPoint" with  main : "x" adj : "y" rel : "relatedTo" result : "z"
-       as           FBinaryPredicate ( "have", ( "addAdjective" ( var(src) ) with adjective : var(y) ) , FVariable( var(z) , "ENTITY" ) , var(score), var(props) )
-;
+nested match  FVariable (var(y), var(a) ,var(b),var(c),var(d),var(e))
+       extend-with "getOutgoingNodes" with variable : "b"   result : "z"   rel : "eqTo"
+       as deep rewrite jsonpath "$0:$.specification" to var(z)
+       ;

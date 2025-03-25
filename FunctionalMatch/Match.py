@@ -132,6 +132,30 @@ class Match:
                     do_extend, dd = self.structural_match(query, x,f"{number}.{k.name}") ## TODO: revise recursive call after update
                     if do_extend and len(dd) > 0:
                         outcome += dd
+        # TODO:
+        #  if self.nested: #and (result is not None)
+        #     if is_dataclass(target):
+        #         for k in fields(target):
+        #                 x = getattr(target, k.name)
+        #                 do_extend, dd = self.structural_match(query, x,f"{number}.{k.name}") ## TODO: revise recursive call after update
+        #                 if do_extend and len(dd) > 0:
+        #                     outcome += dd
+        #     elif isinstance(target, list) or isinstance(target, tuple):
+        #         for idx, x in enumerate(target):
+        #             do_extend, dd = self.structural_match(query, x,
+        #                                                   f"{number}[{idx}]")  ## TODO: revise recursive call after update
+        #             if do_extend and len(dd) > 0:
+        #                 outcome += dd
+        #     else:
+        #         try:
+        #             d = dict(target)
+        #         except:
+        #             d = None
+        #         if isinstance(d, dict):
+        #             for k, x in d.items():
+        #                 do_extend, dd = self.structural_match(query, x,f"{number}.{k}") ## TODO: revise recursive call after update
+        #                 if do_extend and len(dd) > 0:
+        #                     outcome += dd
         return outcome
 
     def structural_match(self, query, target, number):

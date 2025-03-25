@@ -205,3 +205,8 @@ nested match        FBinaryPredicate ( "have", var(src), ( FVariable (var(y), va
                     "getMultiwayAdjectivalPoint" with  main : "x" adj : "y" rel : "relatedTo" result : "z"
        as           FBinaryPredicate ( "have", ( "addAdjective" ( var(src) ) with adjective : var(y) ) , FVariable( var(z) , "ENTITY" ) , var(score), var(props) )
 ;
+
+nested match        FBinaryPredicate ( "have", ( FVariable (var(y), var(a) ,var(b),var(c),var(d),var(e)) ) ,var(dst),  var(score), var(props) )
+       extend-with "getOutgoingNodes" with variable : "b"   result : "z"   rel : "eqTo"
+       as deep rewrite jsonpath "$0:$.src.specification" to var(z)
+;

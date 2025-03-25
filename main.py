@@ -95,13 +95,14 @@ def parmenides_db_write():
     p.stop()
 
 def simpler_test():
-    adj2 = FVariable("fast", "JJ", None, None, 1)
-    adj3 = FVariable("busy", "JJ", None, None, 20)
-    adj4 = FVariable("crowd", None, None, None, 20)
-    ncl = FVariable("Newcastle", "LOC", None, None, 31)
-    becl = FUnaryPredicate("be", adj3, -1, frozenset({"SPACE": ncl}.items()))
-    have2 = FBinaryPredicate("have", ncl, adj4, 1.0, frozenset())
-    Sentence = load_paper_sentences()[13]
+    # adj2 = FVariable("fast", "JJ", None, None, 1)
+    # adj3 = FVariable("busy", "JJ", None, None, 20)
+    # adj4 = FVariable("crowd", None, None, None, 20)
+    # ncl = FVariable("Newcastle", "LOC", None, None, 31)
+    # becl = FUnaryPredicate("be", adj3, -1, frozenset({"SPACE": ncl}.items()))
+    # have2 = FBinaryPredicate("have", ncl, adj4, 1.0, frozenset())
+    Sentence = load_paper_sentences()[6]
+    print(Sentence)
 
     ## INIT PARMENIDES
     import os
@@ -111,7 +112,7 @@ def simpler_test():
     ParmenidesSingleton.instance()
     ParmenidesSingleton.init("/home/giacomo/PyCharmProjects/FunctionalMatch/data/cache", "giacomo", "omocaig",
                              "localhost", 5432, False, parmenides)
-    queries = parse_query("/home/giacomo/PyCharmProjects/FunctionalMatch/query_impl.txt")
+    queries = parse_query("/home/giacomo/PyCharmProjects/FunctionalMatch/query_test.txt")
     ke = KnowledgeExpansion("/home/giacomo/PyCharmProjects/FunctionalMatch/data/cache/_kexp.pickle")
     ke.expand(Sentence, queries, "implDebug", filter=non_redundant_constituents)
 
@@ -138,5 +139,5 @@ def simpler_test():
 
 if __name__ == '__main__':
     # formulae_rewriting_test()
-    tst_query()
-    # simpler_test()
+    # tst_query()
+    simpler_test()

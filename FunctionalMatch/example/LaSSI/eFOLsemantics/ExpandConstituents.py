@@ -8,35 +8,6 @@ from FunctionalMatch.example.LaSSI.eFOLsemantics.TBoxReasoning import TBoxReason
 from FunctionalMatch.example.parmenides.Formulae import FVariable, FNot, FBinaryPredicate, FUnaryPredicate
 from FunctionalMatch.example.parmenides.Parmenides import CasusHappening, Parmenides, ParmenidesSingleton
 
-
-# class ExpandConstituents:
-#     def __init__(self, expander):
-#         self.expander = expander
-#         self.constituent_expansion_map = defaultdict(set)
-#
-#     def expand_formula(self, formula):
-#         ### Defining the expansion of one single rule
-#         if formula is None or formula in self.constituent_expansion_map:
-#             return
-#         for expansion in self.expander(formula):
-#             self.constituent_expansion_map[formula].add(expansion)
-#             self.expand_formula(formula)
-#         if formula not in self.constituent_expansion_map:
-#             self.constituent_expansion_map[formula] = set()
-#
-#     def getExpansionLeaves(self):
-#         return {x for x, y in self.constituent_expansion_map.items() if len(y) == 0}
-
-
-# def get_formula_expansion(expander, formula):
-#     ec = ExpandConstituents(expander)
-#     ec.expand_formula(formula)
-#     return ec.getExpansionLeaves()
-
-
-
-
-
 def isImplication(x):
     return x == CasusHappening.GENERAL_IMPLICATION or x == CasusHappening.LOSE_SPEC_IMPLICATION or x == CasusHappening.INSTANTIATION_IMPLICATION or x == CasusHappening.MISSING_1ST_IMPLICATION
 
@@ -45,6 +16,7 @@ d_transformCaseWhenOneArgIsNegated = None
 
 
 def transformCaseWhenOneArgIsNegated(orig: CasusHappening):
+    """Negation of a more-valued logic (where we have more than just satisfiability or not)"""
     global d_transformCaseWhenOneArgIsNegated
     if d_transformCaseWhenOneArgIsNegated is None:
         d_transformCaseWhenOneArgIsNegated = {CasusHappening.NONE: CasusHappening.NONE,
@@ -82,6 +54,8 @@ def compare_variable(d, lhs, rhs):
         kb = ParmenidesSingleton.get()
         nameEQ = kb.name_eq(lhs.name, rhs.name)
         specEQ = kb.name_eq(lhs.specification, rhs.specification)
+        if lhs.spec_negation != rhs.spec_negation:
+            specEQ = transformCaseWhenOneArgIsNegated(specEQ)
         copCompareInv = compare_variable(d, rhs.cop, lhs.cop)
         val = CasusHappening.INDIFFERENT
         if (nameEQ == specEQ) and (specEQ == copCompareInv):
@@ -100,18 +74,10 @@ def compare_variable(d, lhs, rhs):
                 else:
                     val = copCompareInv
             else:
-                # if rhs.specification is None:
-                #     val = CasusHappening.LOSE_SPEC_IMPLICATION
-                # el
                 if specEQ == CasusHappening.MISSING_1ST_IMPLICATION:
                     val = CasusHappening.INSTANTIATION_IMPLICATION
                 else:
                     val = specEQ
-                #
-                # if specEQ == CasusHappening.MISSING_1ST_IMPLICATION:
-                #     val = CasusHappening.LOSE_SPEC_IMPLICATION
-                # else:
-                #     val = specEQ
         elif isImplication(nameEQ):
             nameAgainstSpec = kb.name_eq(lhs.name, rhs.specification)
             if (specEQ == copCompareInv) and (specEQ == CasusHappening.EQUIVALENT):
@@ -128,6 +94,7 @@ def compare_variable(d, lhs, rhs):
 
 
 def simplifyConstituentsAcross(constituentCollection):
+
     if isinstance(constituentCollection, CasusHappening):
         return constituentCollection
     if CasusHappening.INDIFFERENT in constituentCollection:
@@ -166,6 +133,10 @@ def simplifyConstituentsAcross(constituentCollection):
 
 
 def simplifyConstituents(constituentCollection):
+    """
+    This function calculates the simplication of the constituent collection to the set of elements required to
+    boil down a set of elements to one single constituent
+    """
     if isinstance(constituentCollection, CasusHappening):
         return constituentCollection
     elif CasusHappening.EXCLUSIVES in constituentCollection:
