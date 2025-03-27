@@ -104,7 +104,7 @@ class Query:
                         ## Otherwise, if the values are the same, then I am using the dictionary to instantiate the
                         ## object according to the previously matched parameters, that might have been updated, and
                         ## update the object with that instead
-                        from FunctionalMatch import instantiate
+                        from FunctionalMatch.functions.Instantiate import instantiate
                         dollar_i_obj = evaluate_structural_function(instantiate(self.select.query[action.query_id], dct))
                     val = jpath_update(curr_obj, action.json_path, dollar_i_obj)
                     # assert (not isinstance(val, FUnaryPredicate)) or (val.arg is not None)
