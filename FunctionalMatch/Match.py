@@ -260,7 +260,7 @@ def value_extraction_for_rewriting(dictionary, value):
     elif isinstance(value, JSONPath):
         return var_interpret(value, dictionary)
     elif is_dataclass(value):
-        from FunctionalMatch import instantiate
+        from FunctionalMatch.functions.Instantiate import instantiate
         return instantiate(value, dictionary)
     else:
         return None
