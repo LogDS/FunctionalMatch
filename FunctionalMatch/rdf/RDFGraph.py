@@ -503,6 +503,8 @@ class RDFGraph(object):
         return True
 
     def hasDBStoredData(self):
+        if not self.databaseConn:
+            return True
         engine = create_engine('postgresql://{}:{}@{}:{}/{}'.format(self.user,self.password,self.hostame,self.port, self.database))
         return database_exists(engine.url)
 
