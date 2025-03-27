@@ -10,7 +10,7 @@ __status__ = "Production"
 from dataclasses import dataclass
 from typing import Union
 
-from FunctionalMatch import JSONPath
+from FunctionalMatch.functions.structural_match import JSONPath
 from FunctionalMatch.utils import FrozenDict
 
 @dataclass(frozen=True, eq=True, order=True)
