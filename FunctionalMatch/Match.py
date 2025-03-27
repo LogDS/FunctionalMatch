@@ -14,11 +14,10 @@ from typing import Optional, List, Tuple
 
 import dacite
 
-from FunctionalMatch import JSONPath
 # from FunctionalMatch import structural_match
 from FunctionalMatch.PropositionalLogic import Prop, var_interpret, var_update, ExternalPredicateByExtesion
 from FunctionalMatch.TransformationResults import ReplaceWith
-from FunctionalMatch.functions.structural_match import Variable, var
+from FunctionalMatch.functions.structural_match import Variable, var, JSONPath
 from FunctionalMatch.utils import FrozenDict
 
 

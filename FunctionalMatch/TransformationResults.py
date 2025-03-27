@@ -13,10 +13,9 @@ from typing import Union, List, Tuple
 
 from dacite import from_dict
 
-from FunctionalMatch import JSONPath
 from FunctionalMatch.ReturningFirstObjects import MatchedObjects
 from FunctionalMatch.functions.Reference import Reference
-from FunctionalMatch.functions.structural_match import Variable
+from FunctionalMatch.functions.structural_match import Variable, JSONPath
 from FunctionalMatch.utils import FrozenDict
 
 # def replace_with(obj, d: dict):

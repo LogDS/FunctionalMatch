@@ -26,7 +26,8 @@ class Invent:
     pattern: object
 
     def __call__(self, kwargs: FrozenDict):
-        from FunctionalMatch import instantiate
+        # from FunctionalMatch import instantiate
+        from FunctionalMatch.functions.Instantiate import instantiate
         return MatchedObjects(instantiate(self.pattern, kwargs), kwargs)
 
 
@@ -53,7 +54,7 @@ class FromJSONPath:
     path: Union[str,JSONPath]
 
     def __call__(self, kwargs: FrozenDict):
-        from FunctionalMatch import JSONPath
+        # from FunctionalMatch import JSONPath
         assert self.path in kwargs
         from FunctionalMatch.PropositionalLogic import var_interpret
         result = var_interpret(JSONPath(self.path) if isinstance(self.path, str) else self.path, kwargs)

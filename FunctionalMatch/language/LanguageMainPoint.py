@@ -336,7 +336,7 @@ class MatchingLanguageVisitor2(MatchingLanguageVisitor):
     def visitJpath(self, ctx: MatchingLanguageParser.JpathContext):
         if (ctx is None):
             raise RuntimeError("ERROR MATCHING JPath")
-        from FunctionalMatch import JSONPath
+        from FunctionalMatch.functions.structural_match import JSONPath
         return JSONPath(json.loads(ctx.STRING().getText()))
 
     
@@ -344,7 +344,7 @@ class MatchingLanguageVisitor2(MatchingLanguageVisitor):
     def visitVariable(self, ctx: MatchingLanguageParser.VariableContext):
         if (ctx is None):
             raise RuntimeError("ERROR MATCHING Variable")
-        from FunctionalMatch import var
+        from FunctionalMatch.functions.structural_match import var
         return var(ctx.ALPHANAME().getText())
 
     def visitFunarg(self, ctx: MatchingLanguageParser.FunargContext):

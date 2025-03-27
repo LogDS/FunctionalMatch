@@ -113,9 +113,9 @@ def jpath_update(obj, path, value):
     return result_obj
 
 def var_interpret(obj, kwargs:dict|FrozenDict, keepList=False):
-    from FunctionalMatch import JSONPath
     from FunctionalMatch.functions.structural_match import Variable
     from jsonpath_ng import jsonpath, parse
+    from FunctionalMatch.functions.structural_match import JSONPath
     if isinstance(obj, Variable):
         return kwargs.get(obj.name, None)
     elif isinstance(obj, JSONPath):
@@ -142,11 +142,11 @@ def var_interpret(obj, kwargs:dict|FrozenDict, keepList=False):
         return obj
 
 def var_update(value, obj, kwargs:FrozenDict):
-    from FunctionalMatch import JSONPath
     from FunctionalMatch.functions.structural_match import Variable
     if isinstance(kwargs, dict):
         kwargs = FrozenDict.from_dictionary(kwargs)
     from jsonpath_ng import jsonpath, parse
+    from FunctionalMatch.functions.structural_match import JSONPath
     if isinstance(obj, Variable):
         return kwargs.update(obj.name, value)
     elif isinstance(obj, JSONPath):

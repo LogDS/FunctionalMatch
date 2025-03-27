@@ -80,7 +80,7 @@ class Query:
                 dct = rewrite_as(dct, self.as_.replacement)
                 rewritten.append(dct)
 
-            from LaSSI.structures.extended_fol.Formulae import FUnaryPredicate
+            # from LaSSI.structures.extended_fol.Formulae import FUnaryPredicate
             ## Now, I am updating each object j, recursively, according to the dictionary entry.
             for key in grouped_results:
                 root_objects, result_id = key
@@ -107,9 +107,9 @@ class Query:
                         from FunctionalMatch import instantiate
                         dollar_i_obj = evaluate_structural_function(instantiate(self.select.query[action.query_id], dct))
                     val = jpath_update(curr_obj, action.json_path, dollar_i_obj)
-                    assert (not isinstance(val, FUnaryPredicate)) or (val.arg is not None)
+                    # assert (not isinstance(val, FUnaryPredicate)) or (val.arg is not None)
                     curr_obj = val
-                assert (not isinstance(curr_obj, FUnaryPredicate)) or (curr_obj.arg is not None)
+                # assert (not isinstance(curr_obj, FUnaryPredicate)) or (curr_obj.arg is not None)
                 results.append(curr_obj)
         else:
             for dct, match_preserve_info  in outcome_list:
@@ -117,8 +117,8 @@ class Query:
                 if result2 is not None:
                     result = evaluate_structural_function(result2.obj)
                     if result is not None:
-                        from LaSSI.structures.extended_fol.Formulae import FUnaryPredicate
-                        assert (not isinstance(result, FUnaryPredicate)) or (result.arg is not None)
+                        # from LaSSI.structures.extended_fol.Formulae import FUnaryPredicate
+                        # assert (not isinstance(result, FUnaryPredicate)) or (result.arg is not None)
                         results.append(result)
         return True, results
 
