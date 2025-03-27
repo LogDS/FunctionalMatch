@@ -139,5 +139,5 @@ def simpler_test():
 
 if __name__ == '__main__':
     # formulae_rewriting_test()
-    # tst_query()
-    simpler_test()
+    tst_query()
+    # simpler_test()
